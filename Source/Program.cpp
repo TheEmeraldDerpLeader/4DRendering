@@ -39,6 +39,7 @@ float rotationSpeed = 45.0f;
 float deltaTime;
 
 const float phi = (1.0f + glm::sqrt(5.0f)) / 2.0f;
+//TODO: Remove vector and deque use
 //TODO: Implement textures: Each cell has it's own 3D texture and points interpolate to determine where they are ont the texture.
 
 int main(){
@@ -48,21 +49,31 @@ int main(){
 	camera.position = glm::vec4(0, 0, 3, 0.0f);
 
 	Pentachoron pentachoron(4, 0, 0, 0, 2, 2, 0, 0, 2, 0, 2, 0, 2, 0, 0, 2, phi + 2, phi, phi, phi);
-	Tesseract tesseract(0,0,0,0,1);
+	Tesseract tesseracts[3][3][3];
 	//5-Cell points (2,0,0,0) (0,2,0,0) (0,0,2,0) (0,0,0,2) (phi,phi,phi,phi) 1234, 1235, 1254, 1534, 5234
 	renderManager.tetrahedra.push_back(pentachoron.tetrahedra[0]);
 	renderManager.tetrahedra.push_back(pentachoron.tetrahedra[1]);
 	renderManager.tetrahedra.push_back(pentachoron.tetrahedra[2]);
 	renderManager.tetrahedra.push_back(pentachoron.tetrahedra[3]);
 	renderManager.tetrahedra.push_back(pentachoron.tetrahedra[4]);
-	renderManager.cubes.push_back(tesseract.cubes[0]);
-	renderManager.cubes.push_back(tesseract.cubes[1]);
-	renderManager.cubes.push_back(tesseract.cubes[2]);
-	renderManager.cubes.push_back(tesseract.cubes[3]);
-	renderManager.cubes.push_back(tesseract.cubes[4]);
-	renderManager.cubes.push_back(tesseract.cubes[5]);
-	renderManager.cubes.push_back(tesseract.cubes[6]);
-	renderManager.cubes.push_back(tesseract.cubes[7]);
+	for (int x = 0; x < 3; x++)
+	{
+		for (int y = 0; y < 3; y++)
+		{
+			for (int z = 0; z < 3; z++)
+			{
+				tesseracts[x][y][z] = Tesseract(x-1, -2, y-1, z-1, 0.5f);
+				renderManager.cubes.push_back(tesseracts[x][y][z].cubes[0]);
+				renderManager.cubes.push_back(tesseracts[x][y][z].cubes[1]);
+				renderManager.cubes.push_back(tesseracts[x][y][z].cubes[2]);
+				renderManager.cubes.push_back(tesseracts[x][y][z].cubes[3]);
+				renderManager.cubes.push_back(tesseracts[x][y][z].cubes[4]);
+				renderManager.cubes.push_back(tesseracts[x][y][z].cubes[5]);
+				renderManager.cubes.push_back(tesseracts[x][y][z].cubes[6]);
+				renderManager.cubes.push_back(tesseracts[x][y][z].cubes[7]);
+			}
+		}
+	}
 
 	sf::ContextSettings settings;
 	settings.majorVersion = 3;
@@ -154,7 +165,7 @@ int main(){
 		}
 
 		deltaTime = frameTime.getElapsedTime().asSeconds();
-		//std::cout << deltaTime << '\n';
+		std::cout << 1.0f/deltaTime << '\n';
 		frameTime.restart();
 		window.setActive(true);
 		ProcessInput(&window);
@@ -164,7 +175,7 @@ int main(){
 		shader.use();
 		glBindVertexArray(VAO);
 		glBindBuffer(GL_ARRAY_BUFFER, VBO);
-
+		
 		int vertexNumber = renderManager.SetBuffer(camera, VBO);
 		glDrawArrays(GL_TRIANGLES, 0, vertexNumber);
 

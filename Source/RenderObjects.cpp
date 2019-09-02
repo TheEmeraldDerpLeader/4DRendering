@@ -70,30 +70,28 @@ void Line::Rotate(float xy, float yz, float zx, float xw, float yw, float zw)
 	glm::mat4x4 matrix = RotateMat(xy, yz, zx, xw, yw, zw);
 	glm::vec4 center = point + (direction*0.5f);
 	point -= center;
-	direction -= center;
+	direction = direction + point;
 	point = matrix * point;
 	direction = matrix * direction;
+	direction = direction - point;
 	point += center;
-	direction += center;
 }
 void Line::Transform(glm::mat4x4 matrix)
 {
 	glm::vec4 center = point + (direction*0.5f);
 	point -= center;
-	direction -= center;
+	direction = direction + point;
 	point = matrix * point;
 	direction = matrix * direction;
+	direction = direction - point;
 	point += center;
-	direction += center;
 }
 void Line::TransformAround(glm::mat4x4 matrix, glm::vec4 pivot)
 {
 	point -= pivot;
-	direction -= pivot;
 	point = matrix * point;
 	direction = matrix * direction;
 	point += pivot;
-	direction += pivot;
 }
 //Camera
 Camera::Camera()
@@ -273,35 +271,35 @@ Cube::Cube()
 
 Cube::Cube(glm::vec4 position, float scale)
 {
-	lines[0] = Line(glm::vec4(position.x - scale, position.y - scale, position.z - scale, 0), glm::vec4(scale * 2, 0, 0, 0));
-	lines[1] = Line(glm::vec4(position.x + scale, position.y - scale, position.z - scale, 0), glm::vec4(0, scale * 2, 0, 0));
-	lines[2] = Line(glm::vec4(position.x + scale, position.y + scale, position.z - scale, 0), glm::vec4(-scale * 2, 0, 0, 0));
-	lines[3] = Line(glm::vec4(position.x - scale, position.y + scale, position.z - scale, 0), glm::vec4(0, -scale * 2, 0, 0));
-	lines[4] = Line(glm::vec4(position.x - scale, position.y - scale, position.z + scale, 0), glm::vec4(scale * 2, 0, 0, 0));
-	lines[5] = Line(glm::vec4(position.x + scale, position.y - scale, position.z + scale, 0), glm::vec4(0, scale * 2, 0, 0));
-	lines[6] = Line(glm::vec4(position.x + scale, position.y + scale, position.z + scale, 0), glm::vec4(-scale * 2, 0, 0, 0));
-	lines[7] = Line(glm::vec4(position.x - scale, position.y + scale, position.z + scale, 0), glm::vec4(0, -scale * 2, 0, 0));
-	lines[8] = Line(glm::vec4(position.x - scale, position.y - scale, position.z - scale, 0), glm::vec4(0, 0, scale * 2, 0));
-	lines[9] = Line(glm::vec4(position.x + scale, position.y - scale, position.z - scale, 0), glm::vec4(0, 0, scale * 2, 0));
-	lines[10] = Line(glm::vec4(position.x + scale, position.y + scale, position.z - scale, 0), glm::vec4(0, 0, scale * 2, 0));
-	lines[11] = Line(glm::vec4(position.x - scale, position.y + scale, position.z - scale, 0), glm::vec4(0, 0, scale * 2, 0));
+	lines[0] = Line(glm::vec4(position.x - scale, position.y - scale, position.z - scale, position.w), glm::vec4(scale * 2, 0, 0, 0));
+	lines[1] = Line(glm::vec4(position.x + scale, position.y - scale, position.z - scale, position.w), glm::vec4(0, scale * 2, 0, 0));
+	lines[2] = Line(glm::vec4(position.x + scale, position.y + scale, position.z - scale, position.w), glm::vec4(-scale * 2, 0, 0, 0));
+	lines[3] = Line(glm::vec4(position.x - scale, position.y + scale, position.z - scale, position.w), glm::vec4(0, -scale * 2, 0, 0));
+	lines[4] = Line(glm::vec4(position.x - scale, position.y - scale, position.z + scale, position.w), glm::vec4(scale * 2, 0, 0, 0));
+	lines[5] = Line(glm::vec4(position.x + scale, position.y - scale, position.z + scale, position.w), glm::vec4(0, scale * 2, 0, 0));
+	lines[6] = Line(glm::vec4(position.x + scale, position.y + scale, position.z + scale, position.w), glm::vec4(-scale * 2, 0, 0, 0));
+	lines[7] = Line(glm::vec4(position.x - scale, position.y + scale, position.z + scale, position.w), glm::vec4(0, -scale * 2, 0, 0));
+	lines[8] = Line(glm::vec4(position.x - scale, position.y - scale, position.z - scale, position.w), glm::vec4(0, 0, scale * 2, 0));
+	lines[9] = Line(glm::vec4(position.x + scale, position.y - scale, position.z - scale, position.w), glm::vec4(0, 0, scale * 2, 0));
+	lines[10] = Line(glm::vec4(position.x + scale, position.y + scale, position.z - scale, position.w), glm::vec4(0, 0, scale * 2, 0));
+	lines[11] = Line(glm::vec4(position.x - scale, position.y + scale, position.z - scale, position.w), glm::vec4(0, 0, scale * 2, 0));
 	center = position;
 }
 
 Cube::Cube(float px, float py, float pz, float pw, float scale)
 {
-	lines[0] = Line(glm::vec4(px - scale, py - scale, pz - scale, 0), glm::vec4(scale * 2, 0, 0, 0));
-	lines[1] = Line(glm::vec4(px + scale, py - scale, pz - scale, 0), glm::vec4(0, scale * 2, 0, 0));
-	lines[2] = Line(glm::vec4(px + scale, py + scale, pz - scale, 0), glm::vec4(-scale * 2, 0, 0, 0));
-	lines[3] = Line(glm::vec4(px - scale, py + scale, pz - scale, 0), glm::vec4(0, -scale * 2, 0, 0));
-	lines[4] = Line(glm::vec4(px - scale, py - scale, pz + scale, 0), glm::vec4(scale * 2, 0, 0, 0));
-	lines[5] = Line(glm::vec4(px + scale, py - scale, pz + scale, 0), glm::vec4(0, scale * 2, 0, 0));
-	lines[6] = Line(glm::vec4(px + scale, py + scale, pz + scale, 0), glm::vec4(-scale * 2, 0, 0, 0));
-	lines[7] = Line(glm::vec4(px - scale, py + scale, pz + scale, 0), glm::vec4(0, -scale * 2, 0, 0));
-	lines[8] = Line(glm::vec4(px - scale, py - scale, pz - scale, 0), glm::vec4(0, 0, scale * 2, 0));
-	lines[9] = Line(glm::vec4(px + scale, py - scale, pz - scale, 0), glm::vec4(0, 0, scale * 2, 0));
-	lines[10] = Line(glm::vec4(px + scale, py + scale, pz - scale, 0), glm::vec4(0, 0, scale * 2, 0));
-	lines[11] = Line(glm::vec4(px - scale, py + scale, pz - scale, 0), glm::vec4(0, 0, scale * 2, 0));
+	lines[0] = Line(glm::vec4(px - scale, py - scale, pz - scale, pw), glm::vec4(scale * 2, 0, 0, 0));
+	lines[1] = Line(glm::vec4(px + scale, py - scale, pz - scale, pw), glm::vec4(0, scale * 2, 0, 0));
+	lines[2] = Line(glm::vec4(px + scale, py + scale, pz - scale, pw), glm::vec4(-scale * 2, 0, 0, 0));
+	lines[3] = Line(glm::vec4(px - scale, py + scale, pz - scale, pw), glm::vec4(0, -scale * 2, 0, 0));
+	lines[4] = Line(glm::vec4(px - scale, py - scale, pz + scale, pw), glm::vec4(scale * 2, 0, 0, 0));
+	lines[5] = Line(glm::vec4(px + scale, py - scale, pz + scale, pw), glm::vec4(0, scale * 2, 0, 0));
+	lines[6] = Line(glm::vec4(px + scale, py + scale, pz + scale, pw), glm::vec4(-scale * 2, 0, 0, 0));
+	lines[7] = Line(glm::vec4(px - scale, py + scale, pz + scale, pw), glm::vec4(0, -scale * 2, 0, 0));
+	lines[8] = Line(glm::vec4(px - scale, py - scale, pz - scale, pw), glm::vec4(0, 0, scale * 2, 0));
+	lines[9] = Line(glm::vec4(px + scale, py - scale, pz - scale, pw), glm::vec4(0, 0, scale * 2, 0));
+	lines[10] = Line(glm::vec4(px + scale, py + scale, pz - scale, pw), glm::vec4(0, 0, scale * 2, 0));
+	lines[11] = Line(glm::vec4(px - scale, py + scale, pz - scale, pw), glm::vec4(0, 0, scale * 2, 0));
 	center = glm::vec4(px, py, pz, pw);
 }
 
@@ -539,54 +537,55 @@ unsigned int RenderManager::SetBuffer(Camera& camera, unsigned int VBOaddress)
 {
 	if (tetrahedra.size() == 0 && cubes.size() == 0)
 		return 0;
+	int tetraSize = tetrahedra.size();
+	int tetraOffset = tetrahedra.size() * 6;
+	int cubeSize = cubes.size();
+	int lineSize = (tetraSize * 6) + (cubeSize * 12);
+	vertexPos.clear();
+	vertexCol.clear();
 #pragma region Kernel setup and launch
 	crossSection.SetFunction("CrossSection");
 
-	glm::vec4* points = new glm::vec4[(tetrahedra.size() * 6) + (cubes.size() * 12)];
-	glm::vec4* directions = new glm::vec4[(tetrahedra.size() * 6) + (cubes.size() * 12)];
-	char* states = new char[(tetrahedra.size() * 6) + (cubes.size() * 12)];
+	glm::vec4* points = new glm::vec4[(tetraSize * 6) + (cubeSize * 12)];
+	glm::vec4* directions = new glm::vec4[(tetraSize * 6) + (cubeSize * 12)];
+	char* states = new char[(tetraSize * 6) + (cubeSize * 12)];
 
-	std::vector<Line> lines;
-	lines.reserve((tetrahedra.size() * 6) + (cubes.size() * 12));
+	SmartArray<Line> lines(lineSize);
+ 	
+	for (int i = 0; i < tetraSize; i++)
 	{
-		int iLimit = tetrahedra.size();
-		for (int i = 0; i < iLimit; i++)
-		{
-			lines.push_back(tetrahedra[i].lines[0]);
-			lines.push_back(tetrahedra[i].lines[1]);
-			lines.push_back(tetrahedra[i].lines[2]);
-			lines.push_back(tetrahedra[i].lines[3]);
-			lines.push_back(tetrahedra[i].lines[4]);
-			lines.push_back(tetrahedra[i].lines[5]);
-		}
-		iLimit = cubes.size();
-		for (int i = 0; i < iLimit; i++)
-		{
-			lines.push_back(cubes[i].lines[0]);
-			lines.push_back(cubes[i].lines[1]);
-			lines.push_back(cubes[i].lines[2]);
-			lines.push_back(cubes[i].lines[3]);
-			lines.push_back(cubes[i].lines[4]);
-			lines.push_back(cubes[i].lines[5]);
-			lines.push_back(cubes[i].lines[6]);
-			lines.push_back(cubes[i].lines[7]);
-			lines.push_back(cubes[i].lines[8]);
-			lines.push_back(cubes[i].lines[9]);
-			lines.push_back(cubes[i].lines[10]);
-			lines.push_back(cubes[i].lines[11]);
-		}
+		lines.data[(i * 6) + 0] = tetrahedra[i].lines[0];
+		lines.data[(i * 6) + 1] = tetrahedra[i].lines[1];
+		lines.data[(i * 6) + 2] = tetrahedra[i].lines[2];
+		lines.data[(i * 6) + 3] = tetrahedra[i].lines[3];
+		lines.data[(i * 6) + 4] = tetrahedra[i].lines[4];
+		lines.data[(i * 6) + 5] = tetrahedra[i].lines[5];
 	}
+	for (int i = 0; i < cubeSize; i++)
 	{
-		int iLimit = lines.size();
-		for (int i = 0; i < iLimit; i++)
-		{
-			points[i] = lines[i].point;
-			directions[i] = lines[i].direction;
-		}
+		lines.data[(i * 12) + 0 + tetraOffset] = cubes[i].lines[0];
+		lines.data[(i * 12) + 1 + tetraOffset] = cubes[i].lines[1];
+		lines.data[(i * 12) + 2 + tetraOffset] = cubes[i].lines[2];
+		lines.data[(i * 12) + 3 + tetraOffset] = cubes[i].lines[3];
+		lines.data[(i * 12) + 4 + tetraOffset] = cubes[i].lines[4];
+		lines.data[(i * 12) + 5 + tetraOffset] = cubes[i].lines[5];
+		lines.data[(i * 12) + 6 + tetraOffset] = cubes[i].lines[6];
+		lines.data[(i * 12) + 7 + tetraOffset] = cubes[i].lines[7];
+		lines.data[(i * 12) + 8 + tetraOffset] = cubes[i].lines[8];
+		lines.data[(i * 12) + 9 + tetraOffset] = cubes[i].lines[9];
+		lines.data[(i * 12) + 10 + tetraOffset] = cubes[i].lines[10];
+		lines.data[(i * 12) + 11 + tetraOffset] = cubes[i].lines[11];
 	}
-	cl::Buffer pointBuffer(crossSection.context, CL_MEM_HOST_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(glm::vec4) * lines.size(), points);
-	cl::Buffer directionBuffer(crossSection.context, CL_MEM_HOST_NO_ACCESS | CL_MEM_COPY_HOST_PTR, sizeof(glm::vec4) * lines.size(), directions);
-	cl::Buffer stateBuffer(crossSection.context, CL_MEM_HOST_READ_ONLY, sizeof(char) * lines.size());
+	
+	for (int i = 0; i < lineSize; i++)
+	{
+		points[i] = lines.data[i].point;
+		directions[i] = lines.data[i].direction;
+	}
+	
+	cl::Buffer pointBuffer(crossSection.context, CL_MEM_HOST_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(glm::vec4) * lineSize, points);
+	cl::Buffer directionBuffer(crossSection.context, CL_MEM_HOST_NO_ACCESS | CL_MEM_COPY_HOST_PTR, sizeof(glm::vec4) * lineSize, directions);
+	cl::Buffer stateBuffer(crossSection.context, CL_MEM_HOST_READ_ONLY, sizeof(char) * lineSize);
 	cl::Buffer matrixBuffer(crossSection.context, CL_MEM_HOST_NO_ACCESS | CL_MEM_COPY_HOST_PTR, sizeof(glm::mat4), camera.GetTransformValuePtr());
 	cl::Buffer positionBuffer(crossSection.context, CL_MEM_HOST_NO_ACCESS | CL_MEM_COPY_HOST_PTR, sizeof(glm::vec4), glm::value_ptr(camera.position));
 
@@ -595,377 +594,393 @@ unsigned int RenderManager::SetBuffer(Camera& camera, unsigned int VBOaddress)
 	crossSection.SetVariable(2, stateBuffer);
 	crossSection.SetVariable(3, matrixBuffer);
 	crossSection.SetVariable(4, positionBuffer);
-	crossSection.LaunchKernel(0, 0, lines.size());
+	crossSection.LaunchKernel(0, 0, lineSize);
 #pragma endregion
-	crossSection.ReadKernel(pointBuffer, GL_TRUE, 0, sizeof(glm::vec4) * lines.size(), points);
-	crossSection.ReadKernel(stateBuffer, GL_TRUE, 0, sizeof(char) * lines.size(), states);
+	crossSection.ReadKernel(pointBuffer, GL_TRUE, 0, sizeof(glm::vec4) * lineSize, points);
+	crossSection.ReadKernel(stateBuffer, GL_TRUE, 0, sizeof(char) * lineSize, states);
 
-	vertexPos.clear();
-	vertexCol.clear();
-
-	//Kernel tetrahedron return handler
+	#pragma region Kernel tetrahedron return handler
+	
+	faceColor = 0;
+	SmartArray<glm::vec4> vertexResults(6);
+	vertexResults.count = 0;
+	for (int t = 0; t < tetraSize; t++)
 	{
-		faceColor = 0;
-		int tLimit = tetrahedra.size();
-		for (int t = 0; t < tLimit; t++)
+		//Make a Deque to hold the results. Sort results to Right and left and add to the lists. Sort the lists then combine them. Create triangles from the combinations
+
+		//Which lines crossected
+		int checkSize = 0;
+		if (states[(t * 6)] == 0)
 		{
-			//Make a Deque to hold the results. Sort results to Right and left and add to the lists. Sort the lists then combine them. Create triangles from the combinations
-			std::deque<glm::vec4> vertexResults;
+			vertexResults.data[checkSize] = points[(t * 6)];
+			checkSize++;
+		}
+		if (states[(t * 6) + 1] == 0)
+		{
+			vertexResults.data[checkSize] = points[(t * 6) + 1];
+			checkSize++;
+		}
+		if (states[(t * 6) + 2] == 0)
+		{
+			vertexResults.data[checkSize] = points[(t * 6) + 2];
+			checkSize++;
+		}
+		if (states[(t * 6) + 3] == 0)
+		{
+			vertexResults.data[checkSize] = points[(t * 6) + 3];
+			checkSize++;
+		}
+		if (states[(t * 6) + 4] == 0)
+		{
+			vertexResults.data[checkSize] = points[(t * 6) + 4];
+			checkSize++;
+		}
+		if (states[(t * 6) + 5] == 0)
+		{
+			vertexResults.data[checkSize] = points[(t * 6) + 5];
+			checkSize++;
+		}
+		vertexResults.count = checkSize;
+		if (checkSize < 3)
+			continue;
 
-			//Which lines crossected
-			if (states[(t * 6)] == 0)
-			{
-				vertexResults.push_back(points[(t * 6)]);
-			}
-			if (states[(t * 6) + 1] == 0)
-			{
-				vertexResults.push_back(points[(t * 6) + 1]);
-			}
-			if (states[(t * 6) + 2] == 0)
-			{
-				vertexResults.push_back(points[(t * 6) + 2]);
-			}
-			if (states[(t * 6) + 3] == 0)
-			{
-				vertexResults.push_back(points[(t * 6) + 3]);
-			}
-			if (states[(t * 6) + 4] == 0)
-			{
-				vertexResults.push_back(points[(t * 6) + 4]);
-			}
-			if (states[(t * 6) + 5] == 0)
-			{
-				vertexResults.push_back(points[(t * 6) + 5]);
-			}
-
-			int vectorSize = vertexResults.size();
-			if (vectorSize < 3)
-				continue;
-
-			std::vector<glm::vec4> planedVertices;
-			planedVertices.reserve(vectorSize);
+		SmartArray<glm::vec4> planedVertices(checkSize);
 #pragma region To plane space
-			{ //This stuff is explained is some graph paper I worked on. You would need to see it to understand this.
-				glm::vec4 origin = vertexResults[0]; //i, j, k
-				glm::vec4 planeVec1 = vertexResults[1] - origin; // f, g, h
-				glm::vec4 planeVec2 = vertexResults[2] - origin; // m, n, o
+		{ //This stuff is explained is some graph paper I worked on. You would need to see it to understand this.
+			glm::vec4 origin = vertexResults.data[0]; //i, j, k
+			glm::vec4 planeVec1 = vertexResults.data[1] - origin; // f, g, h
+			glm::vec4 planeVec2 = vertexResults.data[2] - origin; // m, n, o
 
-				float w = (planeVec2.x * planeVec1.y) - (planeVec2.y * planeVec1.x);
-				float gdivw = planeVec1.y / w;
-				float fdivw = planeVec1.x / w;
-				float kdivh = -(origin.z / planeVec1.z);
-				float odivh = planeVec2.z / planeVec1.z;
-				//vectorSize = vertexResults.size();
-				for (int i = 0; i < vectorSize; i++)
-				{
-					glm::vec4& vertex = vertexResults[i];
-					float b = (gdivw*(vertex.x - origin.x)) - (fdivw*(vertex.y - origin.y));
-					planedVertices.push_back(glm::vec4((vertex.z / planeVec1.z) + kdivh - (odivh*b), b, 0, 0)); //The x coordinate is called "a"	
-				}
+			float w = (planeVec2.x * planeVec1.y) - (planeVec2.y * planeVec1.x);
+			float gdivw = planeVec1.y / w;
+			float fdivw = planeVec1.x / w;
+			float kdivh = -(origin.z / planeVec1.z);
+			float odivh = planeVec2.z / planeVec1.z;
+			//vectorSize = vertexResults.size();
+			for (int i = 0; i < checkSize; i++)
+			{
+				glm::vec4& vertex = vertexResults.data[i];
+				float b = (gdivw*(vertex.x - origin.x)) - (fdivw*(vertex.y - origin.y));
+				planedVertices.data[i] = glm::vec4((vertex.z / planeVec1.z) + kdivh - (odivh*b), b, 0, 0); //The x coordinate is called "a"	
 			}
+		}
 #pragma endregion
 
 #pragma region Rotation ordering stuff
-			glm::vec4 centroid(0);
-			std::vector<SortItem> rightVertices;
-			std::vector<SortItem> leftVertices;
-			//vectorSize = vertexResults.size();
-			for (int i = 0; i < vectorSize; i++)
+		glm::vec4 centroid(0);
+		SmartArray<SortItem> rightVertices(checkSize);
+		SmartArray<SortItem> leftVertices(checkSize);
+		rightVertices.count = 0;
+		leftVertices.count = 0;
+		for (int i = 0; i < checkSize; i++)
+		{
+			centroid += planedVertices.data[i];
+		}
+		centroid /= checkSize;
+		for (int i = 0; i < checkSize; i++)
+		{
+			glm::vec4& vertex = planedVertices.data[i];
+			vertex -= centroid;
+			if (vertex.x > 0)
 			{
-				centroid += planedVertices[i];
+				float mag = (vertex.x*vertex.x) + (vertex.y*vertex.y);
+				rightVertices.data[rightVertices.count] = SortItem(i, (vertex.y * std::abs(vertex.y)) / mag); //Sin(theta)^2 = cross/magnitude. Cross of point and (1,0). Sin is invertable between -90 and 90 deg. Cross is x * |x| 
+				rightVertices.count++;
 			}
-			centroid /= vectorSize;
-			for (int i = 0; i < vectorSize; i++)
+			else
 			{
-				glm::vec4& vertex = planedVertices[i];
-				vertex -= centroid;
-				if (vertex.x > 0)
-				{
-					float mag = (vertex.x*vertex.x) + (vertex.y*vertex.y);
-					rightVertices.push_back(SortItem(i, (vertex.y * std::abs(vertex.y)) / mag)); //Sin(theta)^2 = cross/magnitude. Cross of point and (1,0). Sin is invertable between -90 and 90 deg. Cross is x * |x| 
-				}
-				else
-				{
-					float mag = (vertex.x*vertex.x) + (vertex.y*vertex.y);
-					leftVertices.push_back(SortItem(i, (vertex.y * std::abs(vertex.y)) / mag));
-				}
-				//Add to sides with values and ID
+				float mag = (vertex.x*vertex.x) + (vertex.y*vertex.y);
+				leftVertices.data[leftVertices.count] = SortItem(i, (vertex.y * std::abs(vertex.y)) / mag);
+				leftVertices.count++;
 			}
+			//Add to sides with values and ID
+		}
 #pragma endregion
 
-			//Sort each side
-			std::vector<glm::vec4> orderedVertices;
-			orderedVertices.reserve(vertexResults.size());
-			InsertSort(rightVertices);
-			InsertSort(leftVertices);
-			vectorSize = rightVertices.size();
-			for (int i = 0; i < vectorSize; i++)
-			{
-				orderedVertices.push_back(vertexResults[rightVertices[i].ID]);
-			}
-			vectorSize = leftVertices.size();
-			for (int i = vectorSize - 1; i >= 0; i--)
-			{
-				orderedVertices.push_back(vertexResults[leftVertices[i].ID]);
-			}
-			vectorSize = orderedVertices.size() - 2;
-			for (int i = 0; i < vectorSize; i++)
-			{
-				switch (faceColor)
-				{
-				case 0:
-					vertexPos.push_back(orderedVertices[0]);
-					vertexCol.push_back(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
-					vertexPos.push_back(orderedVertices[i + 1]);
-					vertexCol.push_back(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
-					vertexPos.push_back(orderedVertices[i + 2]);
-					vertexCol.push_back(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
-					break;
-				case 1:
-					vertexPos.push_back(orderedVertices[0]);
-					vertexCol.push_back(glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
-					vertexPos.push_back(orderedVertices[i + 1]);
-					vertexCol.push_back(glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
-					vertexPos.push_back(orderedVertices[i + 2]);
-					vertexCol.push_back(glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
-					break;
-				case 2:
-					vertexPos.push_back(orderedVertices[0]);
-					vertexCol.push_back(glm::vec4(0.0f, 1.0f, 0.0f, 1.0f));
-					vertexPos.push_back(orderedVertices[i + 1]);
-					vertexCol.push_back(glm::vec4(0.0f, 1.0f, 0.0f, 1.0f));
-					vertexPos.push_back(orderedVertices[i + 2]);
-					vertexCol.push_back(glm::vec4(0.0f, 1.0f, 0.0f, 1.0f));
-					break;
-				case 3:
-					vertexPos.push_back(orderedVertices[0]);
-					vertexCol.push_back(glm::vec4(0.0f, 0.0f, 1.0f, 1.0f));
-					vertexPos.push_back(orderedVertices[i + 1]);
-					vertexCol.push_back(glm::vec4(0.0f, 0.0f, 1.0f, 1.0f));
-					vertexPos.push_back(orderedVertices[i + 2]);
-					vertexCol.push_back(glm::vec4(0.0f, 0.0f, 1.0f, 1.0f));
-					break;
-				case 4:
-					vertexPos.push_back(orderedVertices[0]);
-					vertexCol.push_back(glm::vec4(1.0f, 1.0f, 0.0f, 1.0f));
-					vertexPos.push_back(orderedVertices[i + 1]);
-					vertexCol.push_back(glm::vec4(1.0f, 1.0f, 0.0f, 1.0f));
-					vertexPos.push_back(orderedVertices[i + 2]);
-					vertexCol.push_back(glm::vec4(1.0f, 1.0f, 0.0f, 1.0f));
-					break;
-				}
-			}
-			faceColor = Modulo(faceColor + 1, 5);
-		}
-	}
-	//Kernel cube return handler
-	{
-		faceColor = 0;
-		int stateOffset = tetrahedra.size() * 6;
-		int tLimit = cubes.size();
-		for (int t = 0; t < tLimit; t++)
+		//Sort each side
+		SmartArray<glm::vec4> orderedVertices(checkSize);
+		orderedVertices.count = 0;
+		InsertSort(rightVertices);
+		InsertSort(leftVertices);
+		checkSize = rightVertices.count;
+		for (int i = 0; i < checkSize; i++)
 		{
-			//Make a Deque to hold the results. Sort results to Right and left and add to the lists. Sort the lists then combine them. Create triangles from the combinations
-			std::deque<glm::vec4> vertexResults;
+			orderedVertices.data[orderedVertices.count] = vertexResults.data[rightVertices.data[i].ID];
+			orderedVertices.count++;
+		}
+		checkSize = leftVertices.count;
+		for (int i = checkSize - 1; i >= 0; i--)
+		{
+			orderedVertices.data[orderedVertices.count] = vertexResults.data[leftVertices.data[i].ID];
+			orderedVertices.count++;
+		}
+		checkSize = orderedVertices.count - 2;
+		for (int i = 0; i < checkSize; i++)
+		{
+			switch (faceColor)
+			{
+			case 0:
+				vertexPos.push_back(orderedVertices.data[0]);
+				vertexCol.push_back(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
+				vertexPos.push_back(orderedVertices.data[i + 1]);
+				vertexCol.push_back(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
+				vertexPos.push_back(orderedVertices.data[i + 2]);
+				vertexCol.push_back(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
+				break;
+			case 1:
+				vertexPos.push_back(orderedVertices.data[0]);
+				vertexCol.push_back(glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
+				vertexPos.push_back(orderedVertices.data[i + 1]);
+				vertexCol.push_back(glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
+				vertexPos.push_back(orderedVertices.data[i + 2]);
+				vertexCol.push_back(glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
+				break;
+			case 2:
+				vertexPos.push_back(orderedVertices.data[0]);
+				vertexCol.push_back(glm::vec4(0.0f, 1.0f, 0.0f, 1.0f));
+				vertexPos.push_back(orderedVertices.data[i + 1]);
+				vertexCol.push_back(glm::vec4(0.0f, 1.0f, 0.0f, 1.0f));
+				vertexPos.push_back(orderedVertices.data[i + 2]);
+				vertexCol.push_back(glm::vec4(0.0f, 1.0f, 0.0f, 1.0f));
+				break;
+			case 3:
+				vertexPos.push_back(orderedVertices.data[0]);
+				vertexCol.push_back(glm::vec4(0.0f, 0.0f, 1.0f, 1.0f));
+				vertexPos.push_back(orderedVertices.data[i + 1]);
+				vertexCol.push_back(glm::vec4(0.0f, 0.0f, 1.0f, 1.0f));
+				vertexPos.push_back(orderedVertices.data[i + 2]);
+				vertexCol.push_back(glm::vec4(0.0f, 0.0f, 1.0f, 1.0f));
+				break;
+			case 4:
+				vertexPos.push_back(orderedVertices.data[0]);
+				vertexCol.push_back(glm::vec4(1.0f, 1.0f, 0.0f, 1.0f));
+				vertexPos.push_back(orderedVertices.data[i + 1]);
+				vertexCol.push_back(glm::vec4(1.0f, 1.0f, 0.0f, 1.0f));
+				vertexPos.push_back(orderedVertices.data[i + 2]);
+				vertexCol.push_back(glm::vec4(1.0f, 1.0f, 0.0f, 1.0f));
+				break;
+			}
+		}
+		faceColor = Modulo(faceColor + 1, 5);
+	}
+	#pragma endregion
+	#pragma region Kernel cube return handler
+	
+	faceColor = 0;
+	vertexResults.Release();
+	vertexResults.Initialize(12);
+	for (int t = 0; t < cubeSize; t++)
+	{
+		//Which lines crossected
+		int checkSize = 0;
+		if (states[(t * 12) + tetraOffset] == 0)
+		{
+			vertexResults.data[checkSize] = points[(t * 12) + tetraOffset];
+			checkSize++;
+		}
+		if (states[(t * 12) + 1 + tetraOffset] == 0)
+		{
+			vertexResults.data[checkSize] = points[(t * 12) + 1 + tetraOffset];
+			checkSize++;
+		}
+		if (states[(t * 12) + 2 + tetraOffset] == 0)
+		{
+			vertexResults.data[checkSize] = points[(t * 12) + 2 + tetraOffset];
+			checkSize++;
+		}
+		if (states[(t * 12) + 3 + tetraOffset] == 0)
+		{
+			vertexResults.data[checkSize] = points[(t * 12) + 3 + tetraOffset];
+			checkSize++;
+		}
+		if (states[(t * 12) + 4 + tetraOffset] == 0)
+		{
+			vertexResults.data[checkSize] = points[(t * 12) + 4 + tetraOffset];
+			checkSize++;
+		}
+		if (states[(t * 12) + 5 + tetraOffset] == 0)
+		{
+			vertexResults.data[checkSize] = points[(t * 12) + 5 + tetraOffset];
+			checkSize++;
+		}
+		if (states[(t * 12) + 6 + tetraOffset] == 0)
+		{
+			vertexResults.data[checkSize] = points[(t * 12) + 6 + tetraOffset];
+			checkSize++;
+		}
+		if (states[(t * 12) + 7 + tetraOffset] == 0)
+		{
+			vertexResults.data[checkSize] = points[(t * 12) + 7 + tetraOffset];
+			checkSize++;
+		}
+		if (states[(t * 12) + 8 + tetraOffset] == 0)
+		{
+			vertexResults.data[checkSize] = points[(t * 12) + 8 + tetraOffset];
+			checkSize++;
+		}
+		if (states[(t * 12) + 9 + tetraOffset] == 0)
+		{
+			vertexResults.data[checkSize] = points[(t * 12) + 9 + tetraOffset];
+			checkSize++;
+		}
+		if (states[(t * 12) + 10 + tetraOffset] == 0)
+		{
+			vertexResults.data[checkSize] = points[(t * 12) + 10 + tetraOffset];
+			checkSize++;
+		}
+		if (states[(t * 12) + 11 + tetraOffset] == 0)
+		{
+			vertexResults.data[checkSize] = points[(t * 12) + 11 + tetraOffset];
+			checkSize++;
+		}
+		vertexResults.count = checkSize;
+		if (checkSize < 3)
+			continue;
 
-			//Which lines crossected
-			if (states[(t * 12) + stateOffset] == 0)
-			{
-				vertexResults.push_back(points[(t * 12) + stateOffset]);
-			}
-			if (states[(t * 12) + 1 + stateOffset] == 0)
-			{
-				vertexResults.push_back(points[(t * 12) + 1 + stateOffset]);
-			}
-			if (states[(t * 12) + 2 + stateOffset] == 0)
-			{
-				vertexResults.push_back(points[(t * 12) + 2 + stateOffset]);
-			}
-			if (states[(t * 12) + 3 + stateOffset] == 0)
-			{
-				vertexResults.push_back(points[(t * 12) + 3 + stateOffset]);
-			}
-			if (states[(t * 12) + 4 + stateOffset] == 0)
-			{
-				vertexResults.push_back(points[(t * 12) + 4 + stateOffset]);
-			}
-			if (states[(t * 12) + 5 + stateOffset] == 0)
-			{
-				vertexResults.push_back(points[(t * 12) + 5 + stateOffset]);
-			}
-			if (states[(t * 12) + 6 + stateOffset] == 0)
-			{
-				vertexResults.push_back(points[(t * 12) + 6 + stateOffset]);
-			}
-			if (states[(t * 12) + 7 + stateOffset] == 0)
-			{
-				vertexResults.push_back(points[(t * 12) + 7 + stateOffset]);
-			}
-			if (states[(t * 12) + 8 + stateOffset] == 0)
-			{
-				vertexResults.push_back(points[(t * 12) + 8 + stateOffset]);
-			}
-			if (states[(t * 12) + 9 + stateOffset] == 0)
-			{
-				vertexResults.push_back(points[(t * 12) + 9 + stateOffset]);
-			}
-			if (states[(t * 12) + 10 + stateOffset] == 0)
-			{
-				vertexResults.push_back(points[(t * 12) + 10 + stateOffset]);
-			}
-			if (states[(t * 12) + 11 + stateOffset] == 0)
-			{
-				vertexResults.push_back(points[(t * 12) + 11 + stateOffset]);
-			}
-			char* debug[100];
-			for (int m = 0; m < 100; m++)
-			{
-				debug[m] = states + m;
-			}
-			int vectorSize = vertexResults.size();
-			if (vectorSize < 3)
-				continue;
-
-			std::vector<glm::vec4> planedVertices;
-			planedVertices.reserve(vectorSize);
+		SmartArray<glm::vec4> planedVertices(checkSize);
 #pragma region To plane space
-			{ //This stuff is explained is some graph paper I worked on. You would need to see it to understand this.
-				glm::vec4 origin = vertexResults[0]; //i, j, k
-				glm::vec4 planeVec1 = vertexResults[1] - origin; // f, g, h
-				glm::vec4 planeVec2 = vertexResults[2] - origin; // m, n, o
+		{ //This stuff is explained is some graph paper I worked on. You would need to see it to understand this.
+			glm::vec4 origin = vertexResults.data[0]; //i, j, k
+			glm::vec4 planeVec1 = vertexResults.data[1] - origin; // f, g, h
+			glm::vec4 planeVec2 = vertexResults.data[2] - origin; // m, n, o
 
-				float w = (planeVec2.x * planeVec1.y) - (planeVec2.y * planeVec1.x);
-				float gdivw = planeVec1.y / w;
-				float fdivw = planeVec1.x / w;
-				float kdivh = -(origin.z / planeVec1.z);
-				float odivh = planeVec2.z / planeVec1.z;
-				//vectorSize = vertexResults.size();
-				for (int i = 0; i < vectorSize; i++)
-				{
-					glm::vec4& vertex = vertexResults[i];
-					float b = (gdivw*(vertex.x - origin.x)) - (fdivw*(vertex.y - origin.y));
-					planedVertices.push_back(glm::vec4((vertex.z / planeVec1.z) + kdivh - (odivh*b), b, 0, 0)); //The x coordinate is called "a"	
-				}
+			float w = (planeVec2.x * planeVec1.y) - (planeVec2.y * planeVec1.x);
+			float gdivw = planeVec1.y / w;
+			float fdivw = planeVec1.x / w;
+			float kdivh = -(origin.z / planeVec1.z);
+			float odivh = planeVec2.z / planeVec1.z;
+			for (int i = 0; i < checkSize; i++)
+			{
+				glm::vec4& vertex = vertexResults.data[i];
+				float b = (gdivw*(vertex.x - origin.x)) - (fdivw*(vertex.y - origin.y));
+				planedVertices.data[i] = glm::vec4((vertex.z / planeVec1.z) + kdivh - (odivh*b), b, 0, 0); //The x coordinate is called "a"	
 			}
+		}
 #pragma endregion
 
 #pragma region Rotation ordering stuff
-			glm::vec4 centroid(0);
-			std::vector<SortItem> rightVertices;
-			std::vector<SortItem> leftVertices;
-			//vectorSize = vertexResults.size();
-			for (int i = 0; i < vectorSize; i++)
+		glm::vec4 centroid(0);
+		SmartArray<SortItem> rightVertices(checkSize);
+		SmartArray<SortItem> leftVertices(checkSize);
+		rightVertices.count = 0;
+		leftVertices.count = 0;
+		//vectorSize = vertexResults.size();
+		for (int i = 0; i < checkSize; i++)
+		{
+			centroid += planedVertices.data[i];
+		}
+		centroid /= checkSize;
+		for (int i = 0; i < checkSize; i++)
+		{
+			glm::vec4& vertex = planedVertices.data[i];
+			vertex -= centroid;
+			if (vertex.x > 0)
 			{
-				centroid += planedVertices[i];
+				float mag = (vertex.x*vertex.x) + (vertex.y*vertex.y);
+				rightVertices.data[rightVertices.count] = SortItem(i, (vertex.y * std::abs(vertex.y)) / mag); //Sin(theta)^2 = cross/magnitude. Cross of point and (1,0). Sin is invertable between -90 and 90 deg. Cross is x * |x| 
+				rightVertices.count++;
 			}
-			centroid /= vectorSize;
-			for (int i = 0; i < vectorSize; i++)
+			else
 			{
-				glm::vec4& vertex = planedVertices[i];
-				vertex -= centroid;
-				if (vertex.x > 0)
-				{
-					float mag = (vertex.x*vertex.x) + (vertex.y*vertex.y);
-					rightVertices.push_back(SortItem(i, (vertex.y * std::abs(vertex.y)) / mag)); //Sin(theta)^2 = cross/magnitude. Cross of point and (1,0). Sin is invertable between -90 and 90 deg. Cross is x * |x| 
-				}
-				else
-				{
-					float mag = (vertex.x*vertex.x) + (vertex.y*vertex.y);
-					leftVertices.push_back(SortItem(i, (vertex.y * std::abs(vertex.y)) / mag));
-				}
-				//Add to sides with values and ID
+				float mag = (vertex.x*vertex.x) + (vertex.y*vertex.y);
+				leftVertices.data[leftVertices.count] = SortItem(i, (vertex.y * std::abs(vertex.y)) / mag);
+				leftVertices.count++;
 			}
+			//Add to sides with values and ID
+		}
 #pragma endregion
 
-			//Sort each side
-			std::vector<glm::vec4> orderedVertices;
-			orderedVertices.reserve(vertexResults.size());
-			InsertSort(rightVertices);
-			InsertSort(leftVertices);
-			vectorSize = rightVertices.size();
-			for (int i = 0; i < vectorSize; i++)
-			{
-				orderedVertices.push_back(vertexResults[rightVertices[i].ID]);
-			}
-			vectorSize = leftVertices.size();
-			for (int i = vectorSize - 1; i >= 0; i--)
-			{
-				orderedVertices.push_back(vertexResults[leftVertices[i].ID]);
-			}
-			vectorSize = orderedVertices.size() - 2;
-			for (int i = 0; i < vectorSize; i++)
-			{
-				switch (faceColor)
-				{
-				case 0:
-					vertexPos.push_back(orderedVertices[0]);
-					vertexCol.push_back(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
-					vertexPos.push_back(orderedVertices[i + 1]);
-					vertexCol.push_back(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
-					vertexPos.push_back(orderedVertices[i + 2]);
-					vertexCol.push_back(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
-					break;
-				case 1:
-					vertexPos.push_back(orderedVertices[0]);
-					vertexCol.push_back(glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
-					vertexPos.push_back(orderedVertices[i + 1]);
-					vertexCol.push_back(glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
-					vertexPos.push_back(orderedVertices[i + 2]);
-					vertexCol.push_back(glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
-					break;
-				case 2:
-					vertexPos.push_back(orderedVertices[0]);
-					vertexCol.push_back(glm::vec4(0.0f, 1.0f, 0.0f, 1.0f));
-					vertexPos.push_back(orderedVertices[i + 1]);
-					vertexCol.push_back(glm::vec4(0.0f, 1.0f, 0.0f, 1.0f));
-					vertexPos.push_back(orderedVertices[i + 2]);
-					vertexCol.push_back(glm::vec4(0.0f, 1.0f, 0.0f, 1.0f));
-					break;
-				case 3:
-					vertexPos.push_back(orderedVertices[0]);
-					vertexCol.push_back(glm::vec4(0.0f, 0.0f, 1.0f, 1.0f));
-					vertexPos.push_back(orderedVertices[i + 1]);
-					vertexCol.push_back(glm::vec4(0.0f, 0.0f, 1.0f, 1.0f));
-					vertexPos.push_back(orderedVertices[i + 2]);
-					vertexCol.push_back(glm::vec4(0.0f, 0.0f, 1.0f, 1.0f));
-					break;
-				case 4:
-					vertexPos.push_back(orderedVertices[0]);
-					vertexCol.push_back(glm::vec4(1.0f, 1.0f, 0.0f, 1.0f));
-					vertexPos.push_back(orderedVertices[i + 1]);
-					vertexCol.push_back(glm::vec4(1.0f, 1.0f, 0.0f, 1.0f));
-					vertexPos.push_back(orderedVertices[i + 2]);
-					vertexCol.push_back(glm::vec4(1.0f, 1.0f, 0.0f, 1.0f));
-					break;
-				case 5:
-					vertexPos.push_back(orderedVertices[0]);
-					vertexCol.push_back(glm::vec4(1.0f, 0.0f, 1.0f, 1.0f));
-					vertexPos.push_back(orderedVertices[i + 1]);
-					vertexCol.push_back(glm::vec4(1.0f, 0.0f, 1.0f, 1.0f));
-					vertexPos.push_back(orderedVertices[i + 2]);
-					vertexCol.push_back(glm::vec4(1.0f, 0.0f, 1.0f, 1.0f));
-					break;
-				case 6:
-					vertexPos.push_back(orderedVertices[0]);
-					vertexCol.push_back(glm::vec4(0.0f, 1.0f, 1.0f, 1.0f));
-					vertexPos.push_back(orderedVertices[i + 1]);
-					vertexCol.push_back(glm::vec4(0.0f, 1.0f, 1.0f, 1.0f));
-					vertexPos.push_back(orderedVertices[i + 2]);
-					vertexCol.push_back(glm::vec4(0.0f, 1.0f, 1.0f, 1.0f));
-					break;
-				case 7:
-					vertexPos.push_back(orderedVertices[0]);
-					vertexCol.push_back(glm::vec4(0.1f, 0.1f, 0.1f, 1.0f));
-					vertexPos.push_back(orderedVertices[i + 1]);
-					vertexCol.push_back(glm::vec4(0.1f, 0.1f, 0.1f, 1.0f));
-					vertexPos.push_back(orderedVertices[i + 2]);
-					vertexCol.push_back(glm::vec4(0.1f, 0.1f, 0.1f, 1.0f));
-					break;
-				}
-			}
-			faceColor = Modulo(faceColor + 1, 8);
+		//Sort each side
+		SmartArray<glm::vec4> orderedVertices(checkSize);
+		orderedVertices.count = 0;
+		InsertSort(rightVertices);
+		InsertSort(leftVertices);
+		checkSize = rightVertices.count;
+		for (int i = 0; i < checkSize; i++)
+		{
+			orderedVertices.data[orderedVertices.count] = vertexResults.data[rightVertices.data[i].ID];
+			orderedVertices.count++;
 		}
+		checkSize = leftVertices.count;
+		for (int i = checkSize - 1; i >= 0; i--)
+		{
+			orderedVertices.data[orderedVertices.count] = vertexResults.data[leftVertices.data[i].ID];
+			orderedVertices.count++;
+		}
+		checkSize = orderedVertices.count - 2;
+		for (int i = 0; i < checkSize; i++)
+		{
+			switch (faceColor)
+			{
+			case 0:
+				vertexPos.push_back(orderedVertices.data[0]);
+				vertexCol.push_back(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
+				vertexPos.push_back(orderedVertices.data[i + 1]);
+				vertexCol.push_back(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
+				vertexPos.push_back(orderedVertices.data[i + 2]);
+				vertexCol.push_back(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
+				break;
+			case 1:
+				vertexPos.push_back(orderedVertices.data[0]);
+				vertexCol.push_back(glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
+				vertexPos.push_back(orderedVertices.data[i + 1]);
+				vertexCol.push_back(glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
+				vertexPos.push_back(orderedVertices.data[i + 2]);
+				vertexCol.push_back(glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
+				break;
+			case 2:
+				vertexPos.push_back(orderedVertices.data[0]);
+				vertexCol.push_back(glm::vec4(0.0f, 1.0f, 0.0f, 1.0f));
+				vertexPos.push_back(orderedVertices.data[i + 1]);
+				vertexCol.push_back(glm::vec4(0.0f, 1.0f, 0.0f, 1.0f));
+				vertexPos.push_back(orderedVertices.data[i + 2]);
+				vertexCol.push_back(glm::vec4(0.0f, 1.0f, 0.0f, 1.0f));
+				break;
+			case 3:
+				vertexPos.push_back(orderedVertices.data[0]);
+				vertexCol.push_back(glm::vec4(0.0f, 0.0f, 1.0f, 1.0f));
+				vertexPos.push_back(orderedVertices.data[i + 1]);
+				vertexCol.push_back(glm::vec4(0.0f, 0.0f, 1.0f, 1.0f));
+				vertexPos.push_back(orderedVertices.data[i + 2]);
+				vertexCol.push_back(glm::vec4(0.0f, 0.0f, 1.0f, 1.0f));
+				break;
+			case 4:
+				vertexPos.push_back(orderedVertices.data[0]);
+				vertexCol.push_back(glm::vec4(1.0f, 1.0f, 0.0f, 1.0f));
+				vertexPos.push_back(orderedVertices.data[i + 1]);
+				vertexCol.push_back(glm::vec4(1.0f, 1.0f, 0.0f, 1.0f));
+				vertexPos.push_back(orderedVertices.data[i + 2]);
+				vertexCol.push_back(glm::vec4(1.0f, 1.0f, 0.0f, 1.0f));
+				break;
+			case 5:
+				vertexPos.push_back(orderedVertices.data[0]);
+				vertexCol.push_back(glm::vec4(1.0f, 0.0f, 1.0f, 1.0f));
+				vertexPos.push_back(orderedVertices.data[i + 1]);
+				vertexCol.push_back(glm::vec4(1.0f, 0.0f, 1.0f, 1.0f));
+				vertexPos.push_back(orderedVertices.data[i + 2]);
+				vertexCol.push_back(glm::vec4(1.0f, 0.0f, 1.0f, 1.0f));
+				break;
+			case 6:
+				vertexPos.push_back(orderedVertices.data[0]);
+				vertexCol.push_back(glm::vec4(0.0f, 1.0f, 1.0f, 1.0f));
+				vertexPos.push_back(orderedVertices.data[i + 1]);
+				vertexCol.push_back(glm::vec4(0.0f, 1.0f, 1.0f, 1.0f));
+				vertexPos.push_back(orderedVertices.data[i + 2]);
+				vertexCol.push_back(glm::vec4(0.0f, 1.0f, 1.0f, 1.0f));
+				break;
+			case 7:
+				vertexPos.push_back(orderedVertices.data[0]);
+				vertexCol.push_back(glm::vec4(0.1f, 0.1f, 0.1f, 1.0f));
+				vertexPos.push_back(orderedVertices.data[i + 1]);
+				vertexCol.push_back(glm::vec4(0.1f, 0.1f, 0.1f, 1.0f));
+				vertexPos.push_back(orderedVertices.data[i + 2]);
+				vertexCol.push_back(glm::vec4(0.1f, 0.1f, 0.1f, 1.0f));
+				break;
+			}
+		}
+		faceColor = Modulo(faceColor + 1, 8);
 	}
+	#pragma endregion
 
 #pragma region Buffer setup
 	float* vboData = new float[vertexPos.size() * 7];
@@ -987,6 +1002,7 @@ unsigned int RenderManager::SetBuffer(Camera& camera, unsigned int VBOaddress)
 	delete[] points;
 	delete[] directions;
 	delete[] states;
+	vertexResults.Release();
 	return vertexPos.size();
 }
 //2D then old 3D

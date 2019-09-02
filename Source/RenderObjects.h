@@ -119,8 +119,8 @@ class RenderManager
 public:
 	int faceColor;
 
-	std::vector<Tetrahedron> tetrahedra;
-	std::vector<Cube> cubes;
+	std::deque<Tetrahedron> tetrahedra;
+	std::deque<Cube> cubes;
 
 	RenderManager();
 	RenderManager(Tetrahedron*, int);
