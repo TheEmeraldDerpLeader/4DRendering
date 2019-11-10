@@ -9,26 +9,10 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include "Modulo.h"
+#include "RenderingGeometry.h"
 
 #include <vector>
 #include <deque>
-
-glm::mat4x4 RotateMat(float, float, float, float, float, float);
-
-struct Line
-{
-	glm::vec4 point;
-	glm::vec4 direction;
-
-	Line();
-	Line(glm::vec4, glm::vec4);
-	Line(float, float, float, float, float, float, float, float);
-
-	void Translate(float, float, float, float);
-	void Rotate(float, float, float, float, float, float);
-	void Transform(glm::mat4x4);
-	void TransformAround(glm::mat4x4, glm::vec4);
-};
 
 class Camera
 {
@@ -51,64 +35,15 @@ public:
 	void RotateZW(float);
 };
 
-struct Triangle
+class Renderable
 {
-	Line lines[3];
+public:
+	glm::mat4x4 transformation;
+	glm::vec4 offset;
+	int modelID;
 
-	Triangle();
-	Triangle(glm::vec4, glm::vec4, glm::vec4);
-	Triangle(float, float, float, float, float, float, float, float, float, float, float, float);
-};
-
-struct Tetrahedron
-{
-	Line lines[6];
-
-	Tetrahedron();
-	Tetrahedron(glm::vec4, glm::vec4, glm::vec4, glm::vec4);
-	Tetrahedron(float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float);
-
-	void Translate(float, float, float, float);
-};
-
-struct Cube
-{
-	Line lines[12];
-	glm::vec4 center;
-
-	Cube();
-	Cube(glm::vec4, float);
-	Cube(float, float, float, float, float);
-
-	void Translate(float, float, float, float);
-	void Rotate(float, float, float, float, float, float);
-	void Transform(glm::mat4x4);
-	void TransformAround(glm::mat4x4, glm::vec4);
-};
-
-struct Pentachoron
-{
-	Tetrahedron tetrahedra[5];
-
-	Pentachoron();
-	Pentachoron(glm::vec4, glm::vec4, glm::vec4, glm::vec4, glm::vec4);
-	Pentachoron(float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float);
-
-	void Translate(float, float, float, float);
-};
-
-struct Tesseract
-{
-	Cube cubes[8];
-	glm::vec4 center;
-
-	Tesseract();
-	Tesseract(glm::vec4, float);
-	Tesseract(float, float, float, float, float);
-
-	void Translate(float, float, float, float);
-	void Rotate(float, float, float, float, float, float);
-	void Transform(glm::mat4x4);
+	Renderable();
+	Renderable(glm::mat4x4, glm::vec4, int);
 };
 
 class RenderManager
@@ -117,13 +52,13 @@ class RenderManager
 	std::deque<glm::vec4> vertexPos;
 	std::deque<glm::vec3> vertexCol;
 public:
+	bool renderMode;
 	int faceColor;
-
-	std::deque<Tetrahedron> tetrahedra;
-	std::deque<Cube> cubes;
+	Pentachoron pentachoronModel;
+	cl::Buffer modelBuffer;
+	std::vector<Renderable> pentaRenderables;
 
 	RenderManager();
-	RenderManager(Tetrahedron*, int);
 
 	unsigned int SetBuffer(Camera&, unsigned int);
 

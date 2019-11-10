@@ -1,6 +1,47 @@
 #include "Helpers.h"
 #include <chrono>
 
+glm::mat4x4 RotateMat(float xy, float yz, float zx, float xw, float yw, float zw)
+{
+	glm::mat4x4 copyMatrix(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
+	glm::mat4x4 tempMat;
+	float angle;
+	//Inverted and column major
+
+	//X->Y rotation
+	angle = glm::radians(xy);
+	tempMat = glm::mat4x4(glm::cos(angle), -glm::sin(angle), 0, 0, glm::sin(angle), glm::cos(angle), 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
+	copyMatrix *= tempMat;
+
+	//Y->Z rotation
+	angle = glm::radians(yz);
+	tempMat = glm::mat4x4(1, 0, 0, 0, 0, glm::cos(angle), -glm::sin(angle), 0, 0, glm::sin(angle), glm::cos(angle), 0, 0, 0, 0, 1);
+	copyMatrix *= tempMat;
+
+	//Z->X rotation
+	angle = glm::radians(zx);
+	tempMat = glm::mat4x4(glm::cos(angle), 0, glm::sin(angle), 0, 0, 1, 0, 0, -glm::sin(angle), 0, glm::cos(angle), 0, 0, 0, 0, 1);
+	copyMatrix *= tempMat;
+
+	//X->W rotation
+	angle = glm::radians(xw);
+	tempMat = glm::mat4x4(glm::cos(angle), 0, 0, -glm::sin(angle), 0, 1, 0, 0, 0, 0, 1, 0, glm::sin(angle), 0, 0, glm::cos(angle));
+	copyMatrix *= tempMat;
+
+	//Y->W rotation
+	angle = glm::radians(yw);
+	tempMat = glm::mat4x4(1, 0, 0, 0, 0, glm::cos(angle), 0, -glm::sin(angle), 0, 0, 1, 0, 0, glm::sin(angle), 0, glm::cos(angle));
+	copyMatrix *= tempMat;
+
+	//Z->W rotation
+	angle = glm::radians(zw);
+	tempMat = glm::mat4x4(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, glm::cos(angle), -glm::sin(angle), 0, 0, glm::sin(angle), glm::cos(angle));
+	copyMatrix *= tempMat;
+
+	return copyMatrix;
+}
+
+
 int RandomGenerator::RandomInt(int firstInt, int secondInt)
 {
 	if (firstInt == secondInt)

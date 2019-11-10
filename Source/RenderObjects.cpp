@@ -1,98 +1,5 @@
 #include "RenderObjects.h"
 
-glm::mat4x4 RotateMat(float xy, float yz, float zx, float xw, float yw, float zw)
-{
-	glm::mat4x4 copyMatrix(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
-	glm::mat4x4 tempMat;
-	float angle;
-	//Inverted and column major
-
-	//X->Y rotation
-	angle = glm::radians(xy);
-	tempMat = glm::mat4x4(glm::cos(angle), -glm::sin(angle), 0, 0, glm::sin(angle), glm::cos(angle), 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
-	copyMatrix *= tempMat;
-
-	//Y->Z rotation
-	angle = glm::radians(yz);
-	tempMat = glm::mat4x4(1, 0, 0, 0, 0, glm::cos(angle), -glm::sin(angle), 0, 0, glm::sin(angle), glm::cos(angle), 0, 0, 0, 0, 1);
-	copyMatrix *= tempMat;
-
-	//Z->X rotation
-	angle = glm::radians(zx);
-	tempMat = glm::mat4x4(glm::cos(angle), 0, glm::sin(angle), 0, 0, 1, 0, 0, -glm::sin(angle), 0, glm::cos(angle), 0, 0, 0, 0, 1);
-	copyMatrix *= tempMat;
-
-	//X->W rotation
-	angle = glm::radians(xw);
-	tempMat = glm::mat4x4(glm::cos(angle), 0, 0, -glm::sin(angle), 0, 1, 0, 0, 0, 0, 1, 0, glm::sin(angle), 0, 0, glm::cos(angle));
-	copyMatrix *= tempMat;
-
-	//Y->W rotation
-	angle = glm::radians(yw);
-	tempMat = glm::mat4x4(1, 0, 0, 0, 0, glm::cos(angle), 0, -glm::sin(angle), 0, 0, 1, 0, 0, glm::sin(angle), 0, glm::cos(angle));
-	copyMatrix *= tempMat;
-
-	//Z->W rotation
-	angle = glm::radians(zw);
-	tempMat = glm::mat4x4(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, glm::cos(angle), -glm::sin(angle), 0, 0, glm::sin(angle), glm::cos(angle));
-	copyMatrix *= tempMat;
-
-	return copyMatrix;
-}
-
-//Line
-Line::Line()
-{
-	point = glm::vec4(0, 0, 0, 0);
-	direction = glm::vec4(0, 0, 0, 0);
-}
-
-Line::Line(glm::vec4 pointVec, glm::vec4 directionVec)
-{
-	point = pointVec;
-	direction = directionVec;
-}
-
-Line::Line(float xPos, float yPos, float zPos, float wPos, float xDir, float yDir, float zDir, float wDir)
-{
-	point = glm::vec4(xPos, yPos, zPos, wPos);
-	direction = glm::vec4(xDir, yDir, zDir, wDir);
-}
-void Line::Translate(float x, float y, float z, float w)
-{
-	point.x += x;
-	point.y += y;
-	point.z += z;
-	point.w += w;
-}
-void Line::Rotate(float xy, float yz, float zx, float xw, float yw, float zw)
-{
-	glm::mat4x4 matrix = RotateMat(xy, yz, zx, xw, yw, zw);
-	glm::vec4 center = point + (direction*0.5f);
-	point -= center;
-	direction = direction + point;
-	point = matrix * point;
-	direction = matrix * direction;
-	direction = direction - point;
-	point += center;
-}
-void Line::Transform(glm::mat4x4 matrix)
-{
-	glm::vec4 center = point + (direction*0.5f);
-	point -= center;
-	direction = direction + point;
-	point = matrix * point;
-	direction = matrix * direction;
-	direction = direction - point;
-	point += center;
-}
-void Line::TransformAround(glm::mat4x4 matrix, glm::vec4 pivot)
-{
-	point -= pivot;
-	point = matrix * point;
-	direction = matrix * direction;
-	point += pivot;
-}
 //Camera
 Camera::Camera()
 {
@@ -191,581 +98,364 @@ void Camera::RotateZW(float degrees)
 {
 	rotation[5] += degrees;
 }
-//Triangle
-Triangle::Triangle()
+//Renderable
+Renderable::Renderable()
 {
-	lines[0] = Line();
-	lines[1] = Line();
-	lines[2] = Line();
+	transformation = glm::mat4x4(1);
+	offset = glm::vec4(0);
+	modelID = 0;
 }
 
-Triangle::Triangle(glm::vec4 point1, glm::vec4 point2, glm::vec4 point3)
+Renderable::Renderable(glm::mat4x4 transformationMatrix, glm::vec4 offsetVec, int modelIDInt)
 {
-	lines[0] = Line(point1, point2 - point1);
-	lines[1] = Line(point2, point3 - point2);
-	lines[2] = Line(point3, point1 - point3);
-}
-
-Triangle::Triangle(float x1, float y1, float z1, float w1, float x2, float y2, float z2, float w2, float x3, float y3, float z3, float w3)
-{
-	lines[0] = Line(glm::vec4(x1, y1, z1, w1), glm::vec4(x2 - x1, y2 - y1, z2 - z1, w2 - w1));
-	lines[1] = Line(glm::vec4(x2, y2, z2, w2), glm::vec4(x3 - x2, y3 - y2, z3 - z2, w3 - w2));
-	lines[2] = Line(glm::vec4(x3, y3, z3, w3), glm::vec4(x1 - x3, y1 - y3, z1 - z3, w1 - w3));
-}
-//Tetrahedron
-Tetrahedron::Tetrahedron()
-{
-	lines[0] = Line();
-	lines[1] = Line();
-	lines[2] = Line();
-	lines[3] = Line();
-	lines[4] = Line();
-	lines[5] = Line();
-}
-
-Tetrahedron::Tetrahedron(glm::vec4 point1, glm::vec4 point2, glm::vec4 point3, glm::vec4 point4)
-{
-	lines[0] = Line(point1, point2 - point1);
-	lines[1] = Line(point1, point3 - point1);
-	lines[2] = Line(point1, point4 - point1);
-	lines[3] = Line(point2, point3 - point2);
-	lines[4] = Line(point2, point4 - point2);
-	lines[5] = Line(point3, point4 - point3);
-}
-
-Tetrahedron::Tetrahedron(float x1, float y1, float z1, float w1, float x2, float y2, float z2, float w2, float x3, float y3, float z3, float w3, float x4, float y4, float z4, float w4)
-{
-	lines[0] = Line(glm::vec4(x1, y1, z1, w1), glm::vec4(x2 - x1, y2 - y1, z2 - z1, w2 - w1));
-	lines[1] = Line(glm::vec4(x1, y1, z1, w1), glm::vec4(x3 - x1, y3 - y1, z3 - z1, w3 - w1));
-	lines[2] = Line(glm::vec4(x1, y1, z1, w1), glm::vec4(x4 - x1, y4 - y1, z4 - z1, w4 - w1));
-	lines[3] = Line(glm::vec4(x2, y2, z2, w2), glm::vec4(x3 - x2, y3 - y2, z3 - z2, w3 - w2));
-	lines[4] = Line(glm::vec4(x2, y2, z2, w2), glm::vec4(x4 - x2, y4 - y2, z4 - z2, w4 - w2));
-	lines[5] = Line(glm::vec4(x3, y3, z3, w3), glm::vec4(x4 - x3, y4 - y3, z4 - z3, w4 - w3));
-}
-void Tetrahedron::Translate(float x, float y, float z, float w)
-{
-	lines[0].Translate(x, y, z, w);
-	lines[1].Translate(x, y, z, w);
-	lines[2].Translate(x, y, z, w);
-	lines[3].Translate(x, y, z, w);
-	lines[4].Translate(x, y, z, w);
-	lines[5].Translate(x, y, z, w);
-}
-//Cube
-Cube::Cube()
-{
-	lines[0] = Line(-0.5f, -0.5f, -0.5f, 0, 1, 0, 0, 0);
-	lines[1] = Line(0.5f, -0.5f, -0.5f, 0, 0, 1, 0, 0);
-	lines[2] = Line(0.5f, 0.5f, -0.5f, 0, -1, 0, 0, 0);
-	lines[3] = Line(-0.5f, 0.5f, -0.5f, 0, 0, -1, 0, 0);
-	lines[4] = Line(-0.5f, -0.5f, 0.5f, 0, 1, 0, 0, 0);
-	lines[5] = Line(0.5f, -0.5f, 0.5f, 0, 0, 1, 0, 0);
-	lines[6] = Line(0.5f, 0.5f, 0.5f, 0, -1, 0, 0, 0);
-	lines[7] = Line(-0.5f, 0.5f, 0.5f, 0, 0, -1, 0, 0);
-	lines[8] = Line(-0.5f, -0.5f, -0.5f, 0, 0, 0, 1, 0);
-	lines[9] = Line(0.5f, -0.5f, -0.5f, 0, 0, 0, 1, 0);
-	lines[10] = Line(0.5f, 0.5f, -0.5f, 0, 0, 0, 1, 0);
-	lines[11] = Line(-0.5f, 0.5f, -0.5f, 0, 0, 0, 1, 0);
-	center = glm::vec4(0, 0, 0, 0);
-}
-
-Cube::Cube(glm::vec4 position, float scale)
-{
-	lines[0] = Line(glm::vec4(position.x - scale, position.y - scale, position.z - scale, position.w), glm::vec4(scale * 2, 0, 0, 0));
-	lines[1] = Line(glm::vec4(position.x + scale, position.y - scale, position.z - scale, position.w), glm::vec4(0, scale * 2, 0, 0));
-	lines[2] = Line(glm::vec4(position.x + scale, position.y + scale, position.z - scale, position.w), glm::vec4(-scale * 2, 0, 0, 0));
-	lines[3] = Line(glm::vec4(position.x - scale, position.y + scale, position.z - scale, position.w), glm::vec4(0, -scale * 2, 0, 0));
-	lines[4] = Line(glm::vec4(position.x - scale, position.y - scale, position.z + scale, position.w), glm::vec4(scale * 2, 0, 0, 0));
-	lines[5] = Line(glm::vec4(position.x + scale, position.y - scale, position.z + scale, position.w), glm::vec4(0, scale * 2, 0, 0));
-	lines[6] = Line(glm::vec4(position.x + scale, position.y + scale, position.z + scale, position.w), glm::vec4(-scale * 2, 0, 0, 0));
-	lines[7] = Line(glm::vec4(position.x - scale, position.y + scale, position.z + scale, position.w), glm::vec4(0, -scale * 2, 0, 0));
-	lines[8] = Line(glm::vec4(position.x - scale, position.y - scale, position.z - scale, position.w), glm::vec4(0, 0, scale * 2, 0));
-	lines[9] = Line(glm::vec4(position.x + scale, position.y - scale, position.z - scale, position.w), glm::vec4(0, 0, scale * 2, 0));
-	lines[10] = Line(glm::vec4(position.x + scale, position.y + scale, position.z - scale, position.w), glm::vec4(0, 0, scale * 2, 0));
-	lines[11] = Line(glm::vec4(position.x - scale, position.y + scale, position.z - scale, position.w), glm::vec4(0, 0, scale * 2, 0));
-	center = position;
-}
-
-Cube::Cube(float px, float py, float pz, float pw, float scale)
-{
-	lines[0] = Line(glm::vec4(px - scale, py - scale, pz - scale, pw), glm::vec4(scale * 2, 0, 0, 0));
-	lines[1] = Line(glm::vec4(px + scale, py - scale, pz - scale, pw), glm::vec4(0, scale * 2, 0, 0));
-	lines[2] = Line(glm::vec4(px + scale, py + scale, pz - scale, pw), glm::vec4(-scale * 2, 0, 0, 0));
-	lines[3] = Line(glm::vec4(px - scale, py + scale, pz - scale, pw), glm::vec4(0, -scale * 2, 0, 0));
-	lines[4] = Line(glm::vec4(px - scale, py - scale, pz + scale, pw), glm::vec4(scale * 2, 0, 0, 0));
-	lines[5] = Line(glm::vec4(px + scale, py - scale, pz + scale, pw), glm::vec4(0, scale * 2, 0, 0));
-	lines[6] = Line(glm::vec4(px + scale, py + scale, pz + scale, pw), glm::vec4(-scale * 2, 0, 0, 0));
-	lines[7] = Line(glm::vec4(px - scale, py + scale, pz + scale, pw), glm::vec4(0, -scale * 2, 0, 0));
-	lines[8] = Line(glm::vec4(px - scale, py - scale, pz - scale, pw), glm::vec4(0, 0, scale * 2, 0));
-	lines[9] = Line(glm::vec4(px + scale, py - scale, pz - scale, pw), glm::vec4(0, 0, scale * 2, 0));
-	lines[10] = Line(glm::vec4(px + scale, py + scale, pz - scale, pw), glm::vec4(0, 0, scale * 2, 0));
-	lines[11] = Line(glm::vec4(px - scale, py + scale, pz - scale, pw), glm::vec4(0, 0, scale * 2, 0));
-	center = glm::vec4(px, py, pz, pw);
-}
-
-void Cube::Translate(float x, float y, float z, float w)
-{
-	lines[0].Translate(x, y, z, w);
-	lines[1].Translate(x, y, z, w);
-	lines[2].Translate(x, y, z, w);
-	lines[3].Translate(x, y, z, w);
-	lines[4].Translate(x, y, z, w);
-	lines[5].Translate(x, y, z, w);
-	lines[6].Translate(x, y, z, w);
-	lines[7].Translate(x, y, z, w);
-	lines[8].Translate(x, y, z, w);
-	lines[9].Translate(x, y, z, w);
-	lines[10].Translate(x, y, z, w);
-	lines[11].Translate(x, y, z, w);
-	center += glm::vec4(x, y, z, w);
-}
-void Cube::Rotate(float xy, float yz, float zx, float xw, float yw, float zw)
-{
-	glm::mat4x4 matrix = RotateMat(xy, yz, zx, xw, yw, zw);
-	lines[0].TransformAround(matrix, center);
-	lines[1].TransformAround(matrix, center);
-	lines[2].TransformAround(matrix, center);
-	lines[3].TransformAround(matrix, center);
-	lines[4].TransformAround(matrix, center);
-	lines[5].TransformAround(matrix, center);
-	lines[6].TransformAround(matrix, center);
-	lines[7].TransformAround(matrix, center);
-	lines[8].TransformAround(matrix, center);
-	lines[9].TransformAround(matrix, center);
-	lines[10].TransformAround(matrix, center);
-	lines[11].TransformAround(matrix, center);
-}
-void Cube::Transform(glm::mat4x4 matrix)
-{
-	lines[0].TransformAround(matrix, center);
-	lines[1].TransformAround(matrix, center);
-	lines[2].TransformAround(matrix, center);
-	lines[3].TransformAround(matrix, center);
-	lines[4].TransformAround(matrix, center);
-	lines[5].TransformAround(matrix, center);
-	lines[6].TransformAround(matrix, center);
-	lines[7].TransformAround(matrix, center);
-	lines[8].TransformAround(matrix, center);
-	lines[9].TransformAround(matrix, center);
-	lines[10].TransformAround(matrix, center);
-	lines[11].TransformAround(matrix, center);
-}
-void Cube::TransformAround(glm::mat4x4 matrix, glm::vec4 pivot)
-{
-	lines[0].TransformAround(matrix, pivot);
-	lines[1].TransformAround(matrix, pivot);
-	lines[2].TransformAround(matrix, pivot);
-	lines[3].TransformAround(matrix, pivot);
-	lines[4].TransformAround(matrix, pivot);
-	lines[5].TransformAround(matrix, pivot);
-	lines[6].TransformAround(matrix, pivot);
-	lines[7].TransformAround(matrix, pivot);
-	lines[8].TransformAround(matrix, pivot);
-	lines[9].TransformAround(matrix, pivot);
-	lines[10].TransformAround(matrix, pivot);
-	lines[11].TransformAround(matrix, pivot);
-}
-//Pentachoron
-Pentachoron::Pentachoron()
-{
-	tetrahedra[0] = Tetrahedron();
-	tetrahedra[1] = Tetrahedron();
-	tetrahedra[2] = Tetrahedron();
-	tetrahedra[3] = Tetrahedron();
-	tetrahedra[4] = Tetrahedron();
-}
-
-Pentachoron::Pentachoron(glm::vec4 point1, glm::vec4 point2, glm::vec4 point3, glm::vec4 point4, glm::vec4 point5)
-{
-	tetrahedra[0] = Tetrahedron(point1, point2, point3, point4);
-	tetrahedra[1] = Tetrahedron(point1, point2, point3, point5);
-	tetrahedra[2] = Tetrahedron(point1, point2, point5, point4);
-	tetrahedra[3] = Tetrahedron(point1, point5, point3, point4);
-	tetrahedra[4] = Tetrahedron(point5, point2, point3, point4);
-}
-
-Pentachoron::Pentachoron(float x1, float y1, float z1, float w1, float x2, float y2, float z2, float w2, float x3, float y3, float z3, float w3, float x4, float y4, float z4, float w4, float x5, float y5, float z5, float w5)
-{
-	tetrahedra[0] = Tetrahedron(x1, y1, z1, w1, x2, y2, z2, w2, x3, y3, z3, w3, x4, y4, z4, w4);
-	tetrahedra[1] = Tetrahedron(x1, y1, z1, w1, x2, y2, z2, w2, x3, y3, z3, w3, x5, y5, z5, w5);
-	tetrahedra[2] = Tetrahedron(x1, y1, z1, w1, x2, y2, z2, w2, x5, y5, z5, w5, x4, y4, z4, w4);
-	tetrahedra[3] = Tetrahedron(x1, y1, z1, w1, x5, y5, z5, w5, x3, y3, z3, w3, x4, y4, z4, w4);
-	tetrahedra[4] = Tetrahedron(x5, y5, z5, w5, x2, y2, z2, w2, x3, y3, z3, w3, x4, y4, z4, w4);
-}
-
-void Pentachoron::Translate(float x, float y, float z, float w)
-{
-	tetrahedra[0].Translate(x, y, z, w);
-	tetrahedra[1].Translate(x, y, z, w);
-	tetrahedra[2].Translate(x, y, z, w);
-	tetrahedra[3].Translate(x, y, z, w);
-	tetrahedra[4].Translate(x, y, z, w);
-}
-//Tesseract
-Tesseract::Tesseract()
-{
-	cubes[0] = Cube();
-	cubes[1] = Cube();
-	cubes[2] = Cube();
-	cubes[3] = Cube();
-	cubes[4] = Cube();
-	cubes[5] = Cube();
-	cubes[6] = Cube();
-	cubes[7] = Cube();
-	center = glm::vec4(0, 0, 0, 0);
-	cubes[2].Rotate(0, 0, 0, 90, 0, 0);
-	cubes[3].Rotate(0, 0, 0, 90, 0, 0);
-	cubes[4].Rotate(0, 0, 0, 0, 90, 0);
-	cubes[5].Rotate(0, 0, 0, 0, 90, 0);
-	cubes[6].Rotate(0, 0, 0, 0, 0, 90);
-	cubes[7].Rotate(0, 0, 0, 0, 0, 90);
-	cubes[0].Translate(0, 0, 0, -0.5f);
-	cubes[1].Translate(0, 0, 0, 0.5f);
-	cubes[2].Translate(0.5f, 0, 0, 0);
-	cubes[3].Translate(-0.5f, 0, 0, 0);
-	cubes[4].Translate(0, 0.5f, 0, 0);
-	cubes[5].Translate(0, -0.5f, 0, 0);
-	cubes[6].Translate(0, 0, -0.5f, 0);
-	cubes[7].Translate(0, 0, 0.5f, 0);
-}
-
-Tesseract::Tesseract(glm::vec4 position, float scale)
-{
-	cubes[0] = Cube(position, scale);
-	cubes[1] = Cube(position, scale);
-	cubes[2] = Cube(position, scale);
-	cubes[3] = Cube(position, scale);
-	cubes[4] = Cube(position, scale);
-	cubes[5] = Cube(position, scale);
-	cubes[6] = Cube(position, scale);
-	cubes[7] = Cube(position, scale);
-	center = position;
-	cubes[2].Rotate(0, 0, 0, 90, 0, 0);
-	cubes[3].Rotate(0, 0, 0, 90, 0, 0);
-	cubes[4].Rotate(0, 0, 0, 0, 90, 0);
-	cubes[5].Rotate(0, 0, 0, 0, 90, 0);
-	cubes[6].Rotate(0, 0, 0, 0, 0, 90);
-	cubes[7].Rotate(0, 0, 0, 0, 0, 90);
-	cubes[0].Translate(0, 0, 0, -0.5f*scale);
-	cubes[1].Translate(0, 0, 0, 0.5f*scale);
-	cubes[2].Translate(0.5f*scale, 0, 0, 0);
-	cubes[3].Translate(-0.5f*scale, 0, 0, 0);
-	cubes[4].Translate(0, 0.5f*scale, 0, 0);
-	cubes[5].Translate(0, -0.5f*scale, 0, 0);
-	cubes[6].Translate(0, 0, -0.5f*scale, 0);
-	cubes[7].Translate(0, 0, 0.5f*scale, 0);
-}
-
-Tesseract::Tesseract(float px, float py, float pz, float pw, float scale)
-{
-	cubes[0] = Cube(px, py, pz, pw, scale);
-	cubes[1] = Cube(px, py, pz, pw, scale);
-	cubes[2] = Cube(px, py, pz, pw, scale);
-	cubes[3] = Cube(px, py, pz, pw, scale);
-	cubes[4] = Cube(px, py, pz, pw, scale);
-	cubes[5] = Cube(px, py, pz, pw, scale);
-	cubes[6] = Cube(px, py, pz, pw, scale);
-	cubes[7] = Cube(px, py, pz, pw, scale);
-	center = glm::vec4(px, py, pz, pw);
-	cubes[2].Rotate(0, 0, 0, 90, 0, 0);
-	cubes[3].Rotate(0, 0, 0, 90, 0, 0);
-	cubes[4].Rotate(0, 0, 0, 0, 90, 0);
-	cubes[5].Rotate(0, 0, 0, 0, 90, 0);
-	cubes[6].Rotate(0, 0, 0, 0, 0, 90);
-	cubes[7].Rotate(0, 0, 0, 0, 0, 90);
-	cubes[0].Translate(0, 0, 0, -scale);
-	cubes[1].Translate(0, 0, 0, scale);
-	cubes[2].Translate(scale, 0, 0, 0);
-	cubes[3].Translate(-scale, 0, 0, 0);
-	cubes[4].Translate(0, scale, 0, 0);
-	cubes[5].Translate(0, -scale, 0, 0);
-	cubes[6].Translate(0, 0, -scale, 0);
-	cubes[7].Translate(0, 0, scale, 0);
-}
-
-void Tesseract::Translate(float x, float y, float z, float w)
-{
-	cubes[0].Translate(x, y, z, w);
-	cubes[1].Translate(x, y, z, w);
-	cubes[2].Translate(x, y, z, w);
-	cubes[3].Translate(x, y, z, w);
-	cubes[4].Translate(x, y, z, w);
-	cubes[5].Translate(x, y, z, w);
-	cubes[6].Translate(x, y, z, w);
-	cubes[7].Translate(x, y, z, w);
-	center += glm::vec4(x, y, z, w);
-}
-void Tesseract::Rotate(float xy, float yz, float zx, float xw, float yw, float zw)
-{
-	glm::mat4x4 matrix = RotateMat(xy, yz, zx, xw, yw, zw);
-	cubes[0].TransformAround(matrix, center);
-	cubes[1].TransformAround(matrix, center);
-	cubes[2].TransformAround(matrix, center);
-	cubes[3].TransformAround(matrix, center);
-	cubes[4].TransformAround(matrix, center);
-	cubes[5].TransformAround(matrix, center);
-	cubes[6].TransformAround(matrix, center);
-	cubes[7].TransformAround(matrix, center);
-}
-void Tesseract::Transform(glm::mat4x4 matrix)
-{
-	cubes[0].TransformAround(matrix, center);
-	cubes[1].TransformAround(matrix, center);
-	cubes[2].TransformAround(matrix, center);
-	cubes[3].TransformAround(matrix, center);
-	cubes[4].TransformAround(matrix, center);
-	cubes[5].TransformAround(matrix, center);
-	cubes[6].TransformAround(matrix, center);
-	cubes[7].TransformAround(matrix, center);
+	transformation = transformationMatrix;
+	offset = offsetVec;
+	modelID = modelIDInt;
 }
 //RenderManager
 RenderManager::RenderManager()
 {
+	renderMode = false;
 	crossSection = GPUProgram("Assets\\Kernels\\CrossSection.cl");
-}
-
-RenderManager::RenderManager(Tetrahedron* tetrahedronsToPass, int arraySize)
-{
-	crossSection = GPUProgram("Assets\\Kernels\\CrossSection.cl");
-	for (int i = 0; i < arraySize; i++)
+	crossSection.SetFunction(0, "CrossSection");
+	crossSection.CreateProgram("Assets\\Kernels\\TetraRenderer.cl");
+	crossSection.SetFunction(1, "MakeFace");
+	pentachoronModel = Pentachoron(0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
+	Line modelLines[30];
+	for (int i = 0; i < 5; i++) 
 	{
-		tetrahedra.push_back(tetrahedronsToPass[i]);
+		for (int l = 0; l < 6; l++)
+		{
+			modelLines[(i * 6) + l] = pentachoronModel.tetrahedra[i].lines[l];
+		}
 	}
+	modelBuffer = cl::Buffer(crossSection.context, CL_MEM_HOST_WRITE_ONLY | CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(Pentachoron), modelLines);
 }
 
 unsigned int RenderManager::SetBuffer(Camera& camera, unsigned int VBOaddress)
 {
-	if (tetrahedra.size() == 0 && cubes.size() == 0)
+	int pentaSize = pentaRenderables.size();
+	int tetraSize = pentaSize * 5;
+	int lineSize = (tetraSize * 6);
+	if (lineSize == 0)
 		return 0;
-	int tetraSize = tetrahedra.size();
-	int tetraOffset = tetrahedra.size() * 6;
-	int cubeSize = cubes.size();
-	int lineSize = (tetraSize * 6) + (cubeSize * 12);
 	vertexPos.clear();
 	vertexCol.clear();
 #pragma region Kernel setup and launch
-	crossSection.SetFunction("CrossSection");
+	glm::mat4x4* modelMatrices = new glm::mat4x4[pentaSize];
+	glm::vec4* modelOffsets = new glm::vec4[pentaSize];
 
-	glm::vec4* points = new glm::vec4[(tetraSize * 6) + (cubeSize * 12)];
-	glm::vec4* directions = new glm::vec4[(tetraSize * 6) + (cubeSize * 12)];
-	char* states = new char[(tetraSize * 6) + (cubeSize * 12)];
+	int* modelIDs = new int[tetraSize];
+	int* tetraIDs = new int[tetraSize];
 
-	SmartArray<Line> lines(lineSize);
- 	
-	for (int i = 0; i < tetraSize; i++)
+	glm::vec4* points = new glm::vec4[lineSize];
+	char* states = new char[lineSize];
+
+	for (int i = 0; i < pentaSize; i++)
 	{
-		lines.data[(i * 6) + 0] = tetrahedra[i].lines[0];
-		lines.data[(i * 6) + 1] = tetrahedra[i].lines[1];
-		lines.data[(i * 6) + 2] = tetrahedra[i].lines[2];
-		lines.data[(i * 6) + 3] = tetrahedra[i].lines[3];
-		lines.data[(i * 6) + 4] = tetrahedra[i].lines[4];
-		lines.data[(i * 6) + 5] = tetrahedra[i].lines[5];
+		Renderable& renderable = pentaRenderables[i];
+		modelMatrices[i] = renderable.transformation;
+		modelOffsets[i] = renderable.offset;
+		for (int t = 0; t < 5; t++)
+		{
+			modelIDs[(i * 5) + t] = i;
+			tetraIDs[(i * 5) + t] = ((renderable.modelID*5) + t);
+		}
 	}
-	for (int i = 0; i < cubeSize; i++)
-	{
-		lines.data[(i * 12) + 0 + tetraOffset] = cubes[i].lines[0];
-		lines.data[(i * 12) + 1 + tetraOffset] = cubes[i].lines[1];
-		lines.data[(i * 12) + 2 + tetraOffset] = cubes[i].lines[2];
-		lines.data[(i * 12) + 3 + tetraOffset] = cubes[i].lines[3];
-		lines.data[(i * 12) + 4 + tetraOffset] = cubes[i].lines[4];
-		lines.data[(i * 12) + 5 + tetraOffset] = cubes[i].lines[5];
-		lines.data[(i * 12) + 6 + tetraOffset] = cubes[i].lines[6];
-		lines.data[(i * 12) + 7 + tetraOffset] = cubes[i].lines[7];
-		lines.data[(i * 12) + 8 + tetraOffset] = cubes[i].lines[8];
-		lines.data[(i * 12) + 9 + tetraOffset] = cubes[i].lines[9];
-		lines.data[(i * 12) + 10 + tetraOffset] = cubes[i].lines[10];
-		lines.data[(i * 12) + 11 + tetraOffset] = cubes[i].lines[11];
-	}
-	
-	for (int i = 0; i < lineSize; i++)
-	{
-		points[i] = lines.data[i].point;
-		directions[i] = lines.data[i].direction;
-	}
-	
+
+	cl::Buffer modelMatricesBuffer(crossSection.context, CL_MEM_HOST_NO_ACCESS | CL_MEM_COPY_HOST_PTR, sizeof(glm::mat4x4)*pentaSize, modelMatrices);
+	cl::Buffer modelOffsetsBuffer(crossSection.context, CL_MEM_HOST_NO_ACCESS | CL_MEM_COPY_HOST_PTR, sizeof(glm::vec4)*pentaSize, modelOffsets);
+	cl::Buffer modelIDBuffer(crossSection.context, CL_MEM_HOST_NO_ACCESS | CL_MEM_COPY_HOST_PTR, sizeof(int) * tetraSize, modelIDs);
+	cl::Buffer tetraIDBuffer(crossSection.context, CL_MEM_HOST_NO_ACCESS | CL_MEM_COPY_HOST_PTR, sizeof(int) * tetraSize, tetraIDs);
 	cl::Buffer pointBuffer(crossSection.context, CL_MEM_HOST_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(glm::vec4) * lineSize, points);
-	cl::Buffer directionBuffer(crossSection.context, CL_MEM_HOST_NO_ACCESS | CL_MEM_COPY_HOST_PTR, sizeof(glm::vec4) * lineSize, directions);
 	cl::Buffer stateBuffer(crossSection.context, CL_MEM_HOST_READ_ONLY, sizeof(char) * lineSize);
 	cl::Buffer matrixBuffer(crossSection.context, CL_MEM_HOST_NO_ACCESS | CL_MEM_COPY_HOST_PTR, sizeof(glm::mat4), camera.GetTransformValuePtr());
-	cl::Buffer positionBuffer(crossSection.context, CL_MEM_HOST_NO_ACCESS | CL_MEM_COPY_HOST_PTR, sizeof(glm::vec4), glm::value_ptr(camera.position));
+	cl::Buffer offsetBuffer(crossSection.context, CL_MEM_HOST_NO_ACCESS | CL_MEM_COPY_HOST_PTR, sizeof(glm::vec4), glm::value_ptr(camera.position));
 
-	crossSection.SetVariable(0, pointBuffer);
-	crossSection.SetVariable(1, directionBuffer);
-	crossSection.SetVariable(2, stateBuffer);
-	crossSection.SetVariable(3, matrixBuffer);
-	crossSection.SetVariable(4, positionBuffer);
-	crossSection.LaunchKernel(0, 0, lineSize);
+	crossSection.SetVariable(0, 0, modelMatricesBuffer);
+	crossSection.SetVariable(0, 1, modelOffsetsBuffer);
+	crossSection.SetVariable(0, 2, modelIDBuffer);
+	crossSection.SetVariable(0, 3, tetraIDBuffer);
+	crossSection.SetVariable(0, 4, pointBuffer);
+	crossSection.SetVariable(0, 5, stateBuffer);
+	crossSection.SetVariable(0, 6, matrixBuffer);
+	crossSection.SetVariable(0, 7, offsetBuffer);
+	crossSection.SetVariable(0, 8, modelBuffer);
+	crossSection.LaunchKernel(0, 0, tetraSize);
+
+	delete[]  modelMatrices;
+	delete[]  modelOffsets;
+	delete[]  modelIDs;
+	delete[]  tetraIDs;
 #pragma endregion
-	crossSection.ReadKernel(pointBuffer, GL_TRUE, 0, sizeof(glm::vec4) * lineSize, points);
-	crossSection.ReadKernel(stateBuffer, GL_TRUE, 0, sizeof(char) * lineSize, states);
-
-	#pragma region Kernel tetrahedron return handler
-	
-	faceColor = 0;
-	SmartArray<glm::vec4> vertexResults(6);
-	vertexResults.count = 0;
-	for (int t = 0; t < tetraSize; t++)
+	crossSection.ReadKernel(0, pointBuffer, GL_TRUE, 0, sizeof(glm::vec4) * lineSize, points);
+	crossSection.ReadKernel(0, stateBuffer, GL_TRUE, 0, sizeof(char) * lineSize, states); // 8 ms
+	std::cout << renderMode << '\n';
+	if (renderMode)
 	{
-		//Make a Deque to hold the results. Sort results to Right and left and add to the lists. Sort the lists then combine them. Create triangles from the combinations
-
-		//Which lines crossected
-		int checkSize = 0;
-		if (states[(t * 6)] == 0)
+#pragma region tetrahedron kernel
+		if (tetraSize > 0)
 		{
-			vertexResults.data[checkSize] = points[(t * 6)];
-			checkSize++;
-		}
-		if (states[(t * 6) + 1] == 0)
-		{
-			vertexResults.data[checkSize] = points[(t * 6) + 1];
-			checkSize++;
-		}
-		if (states[(t * 6) + 2] == 0)
-		{
-			vertexResults.data[checkSize] = points[(t * 6) + 2];
-			checkSize++;
-		}
-		if (states[(t * 6) + 3] == 0)
-		{
-			vertexResults.data[checkSize] = points[(t * 6) + 3];
-			checkSize++;
-		}
-		if (states[(t * 6) + 4] == 0)
-		{
-			vertexResults.data[checkSize] = points[(t * 6) + 4];
-			checkSize++;
-		}
-		if (states[(t * 6) + 5] == 0)
-		{
-			vertexResults.data[checkSize] = points[(t * 6) + 5];
-			checkSize++;
-		}
-		vertexResults.count = checkSize;
-		if (checkSize < 3)
-			continue;
-
-		SmartArray<glm::vec4> planedVertices(checkSize);
-#pragma region To plane space
-		{ //This stuff is explained is some graph paper I worked on. You would need to see it to understand this.
-			glm::vec4 origin = vertexResults.data[0]; //i, j, k
-			glm::vec4 planeVec1 = vertexResults.data[1] - origin; // f, g, h
-			glm::vec4 planeVec2 = vertexResults.data[2] - origin; // m, n, o
-
-			float w = (planeVec2.x * planeVec1.y) - (planeVec2.y * planeVec1.x);
-			float gdivw = planeVec1.y / w;
-			float fdivw = planeVec1.x / w;
-			float kdivh = -(origin.z / planeVec1.z);
-			float odivh = planeVec2.z / planeVec1.z;
-			//vectorSize = vertexResults.size();
-			for (int i = 0; i < checkSize; i++)
+			char* tetraStates = new char[tetraSize];
+			cl::Buffer tetraStateBuffer(crossSection.context, CL_MEM_HOST_READ_ONLY, sizeof(char)*tetraSize);
+			crossSection.SetVariable(1, 0, pointBuffer);
+			crossSection.SetVariable(1, 1, stateBuffer);
+			crossSection.SetVariable(1, 2, tetraStateBuffer);
+			crossSection.LaunchKernel(1, 0, tetraSize);
+			crossSection.ReadKernel(1, pointBuffer, GL_TRUE, 0, sizeof(glm::vec4) * lineSize, points);
+			crossSection.ReadKernel(1, tetraStateBuffer, GL_TRUE, 0, sizeof(char)*tetraSize, tetraStates);
+			faceColor = 0;
+			for (int i = 0; i < tetraSize; i++)
 			{
-				glm::vec4& vertex = vertexResults.data[i];
-				float b = (gdivw*(vertex.x - origin.x)) - (fdivw*(vertex.y - origin.y));
-				planedVertices.data[i] = glm::vec4((vertex.z / planeVec1.z) + kdivh - (odivh*b), b, 0, 0); //The x coordinate is called "a"	
-			}
+				if (tetraStates[i] >= 3)
+				{
+					int checkSize = tetraStates[i] - 2;
+					for (int t = 0; t < checkSize; t++)
+					{
+						switch (faceColor)
+						{
+						case 0:
+							vertexPos.push_back(points[(i * 6) + 0]);
+							vertexCol.push_back(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
+							vertexPos.push_back(points[(i * 6) + 1 + t]);
+							vertexCol.push_back(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
+							vertexPos.push_back(points[(i * 6) + 2 + t]);
+							vertexCol.push_back(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
+							break;
+						case 1:
+							vertexPos.push_back(points[(i * 6) + 0]);
+							vertexCol.push_back(glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
+							vertexPos.push_back(points[(i * 6) + 1 + t]);
+							vertexCol.push_back(glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
+							vertexPos.push_back(points[(i * 6) + 2 + t]);
+							vertexCol.push_back(glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
+							break;
+						case 2:
+							vertexPos.push_back(points[(i * 6) + 0]);
+							vertexCol.push_back(glm::vec4(0.0f, 1.0f, 0.0f, 1.0f));
+							vertexPos.push_back(points[(i * 6) + 1 + t]);
+							vertexCol.push_back(glm::vec4(0.0f, 1.0f, 0.0f, 1.0f));
+							vertexPos.push_back(points[(i * 6) + 2 + t]);
+							vertexCol.push_back(glm::vec4(0.0f, 1.0f, 0.0f, 1.0f));
+							break;
+						case 3:
+							vertexPos.push_back(points[(i * 6) + 0]);
+							vertexCol.push_back(glm::vec4(0.0f, 0.0f, 1.0f, 1.0f));
+							vertexPos.push_back(points[(i * 6) + 1 + t]);
+							vertexCol.push_back(glm::vec4(0.0f, 0.0f, 1.0f, 1.0f));
+							vertexPos.push_back(points[(i * 6) + 2 + t]);
+							vertexCol.push_back(glm::vec4(0.0f, 0.0f, 1.0f, 1.0f));
+							break;
+						case 4:
+							vertexPos.push_back(points[(i * 6) + 0]);
+							vertexCol.push_back(glm::vec4(1.0f, 1.0f, 0.0f, 1.0f));
+							vertexPos.push_back(points[(i * 6) + 1 + t]);
+							vertexCol.push_back(glm::vec4(1.0f, 1.0f, 0.0f, 1.0f));
+							vertexPos.push_back(points[(i * 6) + 2 + t]);
+							vertexCol.push_back(glm::vec4(1.0f, 1.0f, 0.0f, 1.0f));
+							break;
+						}
+					}
+					faceColor = Modulo(faceColor + 1, 5);
+				}
+			} //7 ms
+			delete[] tetraStates;
 		}
+#pragma endregion
+	} //7 ms
+	else
+	{
+#pragma region Kernel tetrahedron return handler
+
+		faceColor = 0;
+		SmartArray<glm::vec4> vertexResults(6);
+		vertexResults.count = 0;
+		for (int t = 0; t < tetraSize; t++)
+		{
+			//Make an array to hold the results. Sort results to Right and left and add to the lists. Sort the lists then combine them. Create triangles from the combinations
+
+			//Which lines crossected
+			int checkSize = 0;
+			if (states[(t * 6)] == 0)
+			{
+				vertexResults.data[checkSize] = points[(t * 6)];
+				checkSize++;
+			}
+			if (states[(t * 6) + 1] == 0)
+			{
+				vertexResults.data[checkSize] = points[(t * 6) + 1];
+				checkSize++;
+			}
+			if (states[(t * 6) + 2] == 0)
+			{
+				vertexResults.data[checkSize] = points[(t * 6) + 2];
+				checkSize++;
+			}
+			if (states[(t * 6) + 3] == 0)
+			{
+				vertexResults.data[checkSize] = points[(t * 6) + 3];
+				checkSize++;
+			}
+			if (states[(t * 6) + 4] == 0)
+			{
+				vertexResults.data[checkSize] = points[(t * 6) + 4];
+				checkSize++;
+			}
+			if (states[(t * 6) + 5] == 0)
+			{
+				vertexResults.data[checkSize] = points[(t * 6) + 5];
+				checkSize++;
+			}
+			vertexResults.count = checkSize;
+			if (checkSize < 3)
+				continue;
+
+			SmartArray<glm::vec4> planedVertices(checkSize);
+#pragma region To plane space
+			{ //This stuff is explained is some graph paper I worked on. You would need to see it to understand this.
+				glm::vec4 origin = vertexResults.data[0]; //i, j, k
+				glm::vec4 planeVec1 = vertexResults.data[1] - origin; // f, g, h
+				glm::vec4 planeVec2 = vertexResults.data[2] - origin; // m, n, o
+
+				float w = (planeVec2.x * planeVec1.y) - (planeVec2.y * planeVec1.x);
+				float gdivw = planeVec1.y / w;
+				float fdivw = planeVec1.x / w;
+				float kdivh = -(origin.z / planeVec1.z);
+				float odivh = planeVec2.z / planeVec1.z;
+				for (int i = 0; i < checkSize; i++)
+				{
+					glm::vec4& vertex = vertexResults.data[i];
+					float b = (gdivw*(vertex.x - origin.x)) - (fdivw*(vertex.y - origin.y));
+					planedVertices.data[i] = glm::vec4((vertex.z / planeVec1.z) + kdivh - (odivh*b), b, 0, 0); //The x coordinate is called "a"	
+				}
+			}
 #pragma endregion
 
 #pragma region Rotation ordering stuff
-		glm::vec4 centroid(0);
-		SmartArray<SortItem> rightVertices(checkSize);
-		SmartArray<SortItem> leftVertices(checkSize);
-		rightVertices.count = 0;
-		leftVertices.count = 0;
-		for (int i = 0; i < checkSize; i++)
-		{
-			centroid += planedVertices.data[i];
-		}
-		centroid /= checkSize;
-		for (int i = 0; i < checkSize; i++)
-		{
-			glm::vec4& vertex = planedVertices.data[i];
-			vertex -= centroid;
-			if (vertex.x > 0)
+			glm::vec4 centroid(0);
+			SmartArray<SortItem> rightVertices(checkSize);
+			SmartArray<SortItem> leftVertices(checkSize);
+			rightVertices.count = 0;
+			leftVertices.count = 0;
+			for (int i = 0; i < checkSize; i++)
 			{
-				float mag = (vertex.x*vertex.x) + (vertex.y*vertex.y);
-				rightVertices.data[rightVertices.count] = SortItem(i, (vertex.y * std::abs(vertex.y)) / mag); //Sin(theta)^2 = cross/magnitude. Cross of point and (1,0). Sin is invertable between -90 and 90 deg. Cross is x * |x| 
-				rightVertices.count++;
+				centroid += planedVertices.data[i];
 			}
-			else
+			centroid /= checkSize;
+			for (int i = 0; i < checkSize; i++)
 			{
-				float mag = (vertex.x*vertex.x) + (vertex.y*vertex.y);
-				leftVertices.data[leftVertices.count] = SortItem(i, (vertex.y * std::abs(vertex.y)) / mag);
-				leftVertices.count++;
+				glm::vec4& vertex = planedVertices.data[i];
+				vertex -= centroid;
+				if (vertex.x > 0)
+				{
+					float mag = (vertex.x*vertex.x) + (vertex.y*vertex.y);
+					rightVertices.data[rightVertices.count] = SortItem(i, (vertex.y * std::abs(vertex.y)) / mag); //Sin(theta)^2 = cross/magnitude. Cross of point and (1,0). Sin is invertable between -90 and 90 deg. Cross is x * |x| 
+					rightVertices.count++;
+				}
+				else
+				{
+					float mag = (vertex.x*vertex.x) + (vertex.y*vertex.y);
+					leftVertices.data[leftVertices.count] = SortItem(i, (vertex.y * std::abs(vertex.y)) / mag);
+					leftVertices.count++;
+				}
+				//Add to sides with values and ID
 			}
-			//Add to sides with values and ID
-		}
 #pragma endregion
-
-		//Sort each side
-		SmartArray<glm::vec4> orderedVertices(checkSize);
-		orderedVertices.count = 0;
-		InsertSort(rightVertices);
-		InsertSort(leftVertices);
-		checkSize = rightVertices.count;
-		for (int i = 0; i < checkSize; i++)
-		{
-			orderedVertices.data[orderedVertices.count] = vertexResults.data[rightVertices.data[i].ID];
-			orderedVertices.count++;
-		}
-		checkSize = leftVertices.count;
-		for (int i = checkSize - 1; i >= 0; i--)
-		{
-			orderedVertices.data[orderedVertices.count] = vertexResults.data[leftVertices.data[i].ID];
-			orderedVertices.count++;
-		}
-		checkSize = orderedVertices.count - 2;
-		for (int i = 0; i < checkSize; i++)
-		{
-			switch (faceColor)
+			//Sort each side
+			SmartArray<glm::vec4> orderedVertices(checkSize);
+			orderedVertices.count = 0;
+			InsertSort(rightVertices);
+			InsertSort(leftVertices);
+			checkSize = rightVertices.count;
+			for (int i = 0; i < checkSize; i++)
 			{
-			case 0:
-				vertexPos.push_back(orderedVertices.data[0]);
-				vertexCol.push_back(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
-				vertexPos.push_back(orderedVertices.data[i + 1]);
-				vertexCol.push_back(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
-				vertexPos.push_back(orderedVertices.data[i + 2]);
-				vertexCol.push_back(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
-				break;
-			case 1:
-				vertexPos.push_back(orderedVertices.data[0]);
-				vertexCol.push_back(glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
-				vertexPos.push_back(orderedVertices.data[i + 1]);
-				vertexCol.push_back(glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
-				vertexPos.push_back(orderedVertices.data[i + 2]);
-				vertexCol.push_back(glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
-				break;
-			case 2:
-				vertexPos.push_back(orderedVertices.data[0]);
-				vertexCol.push_back(glm::vec4(0.0f, 1.0f, 0.0f, 1.0f));
-				vertexPos.push_back(orderedVertices.data[i + 1]);
-				vertexCol.push_back(glm::vec4(0.0f, 1.0f, 0.0f, 1.0f));
-				vertexPos.push_back(orderedVertices.data[i + 2]);
-				vertexCol.push_back(glm::vec4(0.0f, 1.0f, 0.0f, 1.0f));
-				break;
-			case 3:
-				vertexPos.push_back(orderedVertices.data[0]);
-				vertexCol.push_back(glm::vec4(0.0f, 0.0f, 1.0f, 1.0f));
-				vertexPos.push_back(orderedVertices.data[i + 1]);
-				vertexCol.push_back(glm::vec4(0.0f, 0.0f, 1.0f, 1.0f));
-				vertexPos.push_back(orderedVertices.data[i + 2]);
-				vertexCol.push_back(glm::vec4(0.0f, 0.0f, 1.0f, 1.0f));
-				break;
-			case 4:
-				vertexPos.push_back(orderedVertices.data[0]);
-				vertexCol.push_back(glm::vec4(1.0f, 1.0f, 0.0f, 1.0f));
-				vertexPos.push_back(orderedVertices.data[i + 1]);
-				vertexCol.push_back(glm::vec4(1.0f, 1.0f, 0.0f, 1.0f));
-				vertexPos.push_back(orderedVertices.data[i + 2]);
-				vertexCol.push_back(glm::vec4(1.0f, 1.0f, 0.0f, 1.0f));
-				break;
+				orderedVertices.data[orderedVertices.count] = vertexResults.data[rightVertices.data[i].ID];
+				orderedVertices.count++;
 			}
+			checkSize = leftVertices.count;
+			for (int i = checkSize - 1; i >= 0; i--)
+			{
+				orderedVertices.data[orderedVertices.count] = vertexResults.data[leftVertices.data[i].ID];
+				orderedVertices.count++;
+			}
+			checkSize = orderedVertices.count - 2;
+			for (int i = 0; i < checkSize; i++)
+			{
+				switch (faceColor)
+				{
+				case 0:
+					vertexPos.push_back(orderedVertices.data[0]);
+					vertexCol.push_back(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
+					vertexPos.push_back(orderedVertices.data[i + 1]);
+					vertexCol.push_back(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
+					vertexPos.push_back(orderedVertices.data[i + 2]);
+					vertexCol.push_back(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
+					break;
+				case 1:
+					vertexPos.push_back(orderedVertices.data[0]);
+					vertexCol.push_back(glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
+					vertexPos.push_back(orderedVertices.data[i + 1]);
+					vertexCol.push_back(glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
+					vertexPos.push_back(orderedVertices.data[i + 2]);
+					vertexCol.push_back(glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
+					break;
+				case 2:
+					vertexPos.push_back(orderedVertices.data[0]);
+					vertexCol.push_back(glm::vec4(0.0f, 1.0f, 0.0f, 1.0f));
+					vertexPos.push_back(orderedVertices.data[i + 1]);
+					vertexCol.push_back(glm::vec4(0.0f, 1.0f, 0.0f, 1.0f));
+					vertexPos.push_back(orderedVertices.data[i + 2]);
+					vertexCol.push_back(glm::vec4(0.0f, 1.0f, 0.0f, 1.0f));
+					break;
+				case 3:
+					vertexPos.push_back(orderedVertices.data[0]);
+					vertexCol.push_back(glm::vec4(0.0f, 0.0f, 1.0f, 1.0f));
+					vertexPos.push_back(orderedVertices.data[i + 1]);
+					vertexCol.push_back(glm::vec4(0.0f, 0.0f, 1.0f, 1.0f));
+					vertexPos.push_back(orderedVertices.data[i + 2]);
+					vertexCol.push_back(glm::vec4(0.0f, 0.0f, 1.0f, 1.0f));
+					break;
+				case 4:
+					vertexPos.push_back(orderedVertices.data[0]);
+					vertexCol.push_back(glm::vec4(1.0f, 1.0f, 0.0f, 1.0f));
+					vertexPos.push_back(orderedVertices.data[i + 1]);
+					vertexCol.push_back(glm::vec4(1.0f, 1.0f, 0.0f, 1.0f));
+					vertexPos.push_back(orderedVertices.data[i + 2]);
+					vertexCol.push_back(glm::vec4(1.0f, 1.0f, 0.0f, 1.0f));
+					break;
+				}
+			}
+			faceColor = Modulo(faceColor + 1, 5);
 		}
-		faceColor = Modulo(faceColor + 1, 5);
+
+#pragma endregion
+	} //7 ms
+
+#pragma region Buffer setup
+	float* vboData = new float[vertexPos.size() * 7];
+
+	for (int i = 0; i < vertexPos.size(); i++)
+	{
+		vboData[0 + (i * 7)] = vertexPos[i].x;
+		vboData[1 + (i * 7)] = vertexPos[i].y;
+		vboData[2 + (i * 7)] = vertexPos[i].z;
+		vboData[3 + (i * 7)] = 1;
+		vboData[4 + (i * 7)] = vertexCol[i].x;
+		vboData[5 + (i * 7)] = vertexCol[i].y;
+		vboData[6 + (i * 7)] = vertexCol[i].z;
 	}
-	#pragma endregion
-	#pragma region Kernel cube return handler
-	
+	glBindBuffer(GL_ARRAY_BUFFER, VBOaddress);
+	glBufferData(GL_ARRAY_BUFFER, 7 * sizeof(float) * vertexPos.size(), vboData, GL_DYNAMIC_DRAW);
+#pragma endregion
+	delete[] vboData;
+	delete[] points;
+	delete[] states;
+	return vertexPos.size(); // 14 ms
+}
+//Cube, 2D, old 3D
+/*
+#pragma region Kernel cube return handler
+
 	faceColor = 0;
 	vertexResults.Release();
 	vertexResults.Initialize(12);
@@ -853,7 +543,7 @@ unsigned int RenderManager::SetBuffer(Camera& camera, unsigned int VBOaddress)
 			{
 				glm::vec4& vertex = vertexResults.data[i];
 				float b = (gdivw*(vertex.x - origin.x)) - (fdivw*(vertex.y - origin.y));
-				planedVertices.data[i] = glm::vec4((vertex.z / planeVec1.z) + kdivh - (odivh*b), b, 0, 0); //The x coordinate is called "a"	
+				planedVertices.data[i] = glm::vec4((vertex.z / planeVec1.z) + kdivh - (odivh*b), b, 0, 0); //The x coordinate is called "a"
 			}
 		}
 #pragma endregion
@@ -877,7 +567,7 @@ unsigned int RenderManager::SetBuffer(Camera& camera, unsigned int VBOaddress)
 			if (vertex.x > 0)
 			{
 				float mag = (vertex.x*vertex.x) + (vertex.y*vertex.y);
-				rightVertices.data[rightVertices.count] = SortItem(i, (vertex.y * std::abs(vertex.y)) / mag); //Sin(theta)^2 = cross/magnitude. Cross of point and (1,0). Sin is invertable between -90 and 90 deg. Cross is x * |x| 
+				rightVertices.data[rightVertices.count] = SortItem(i, (vertex.y * std::abs(vertex.y)) / mag); //Sin(theta)^2 = cross/magnitude. Cross of point and (1,0). Sin is invertable between -90 and 90 deg. Cross is x * |x|
 				rightVertices.count++;
 			}
 			else
@@ -980,33 +670,8 @@ unsigned int RenderManager::SetBuffer(Camera& camera, unsigned int VBOaddress)
 		}
 		faceColor = Modulo(faceColor + 1, 8);
 	}
-	#pragma endregion
-
-#pragma region Buffer setup
-	float* vboData = new float[vertexPos.size() * 7];
-
-	for (int i = 0; i < vertexPos.size(); i++)
-	{
-		vboData[0 + (i * 7)] = vertexPos[i].x;
-		vboData[1 + (i * 7)] = vertexPos[i].y;
-		vboData[2 + (i * 7)] = vertexPos[i].z;
-		vboData[3 + (i * 7)] = 1;
-		vboData[4 + (i * 7)] = vertexCol[i].x;
-		vboData[5 + (i * 7)] = vertexCol[i].y;
-		vboData[6 + (i * 7)] = vertexCol[i].z;
-	}
-	glBindBuffer(GL_ARRAY_BUFFER, VBOaddress);
-	glBufferData(GL_ARRAY_BUFFER, 7 * sizeof(float) * vertexPos.size(), vboData, GL_DYNAMIC_DRAW);
 #pragma endregion
-	delete[] vboData;
-	delete[] points;
-	delete[] directions;
-	delete[] states;
-	vertexResults.Release();
-	return vertexPos.size();
-}
-//2D then old 3D
-/*
+
 unsigned int RenderManager::SetBuffer(Camera& camera, unsigned int VBOaddress)
 {
 	faceColor = 0;

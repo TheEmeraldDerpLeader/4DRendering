@@ -12,18 +12,19 @@ public:
 	cl::Platform platform;
 	std::vector<cl::Device> devices;
 	cl::Device device;
-	cl::Program::Sources sources;
+	std::vector<cl::Program::Sources> sources;
 	cl::Context context;
 	std::ifstream kernelFile;
-	std::string src;
-	cl::Program program;
-	cl::Kernel kernel;
-	cl::CommandQueue queue;
+	std::vector<std::string> filePaths;
+	std::vector<cl::Program> programs;
+	std::vector<cl::Kernel> kernels;
+	std::vector<cl::CommandQueue> queues;
 	GPUProgram();
 	GPUProgram(std::string);
 
-	void SetFunction(std::string);
-	void SetVariable(int, cl::Buffer);
+	void CreateProgram(std::string);
+	void SetFunction(int, std::string);
+	void SetVariable(int, int, cl::Buffer);
 	void LaunchKernel(int, int, int);
-	void ReadKernel(cl::Buffer, bool, int, int, void*);
+	void ReadKernel(int, cl::Buffer, bool, int, int, void*);
 };

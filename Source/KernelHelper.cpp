@@ -16,37 +16,40 @@ GPUProgram::GPUProgram(std::string kernelFilePath)
 		abort();
 	}
 	device = devices.front();
-
-	kernelFile = std::ifstream(kernelFilePath.c_str());
-	src = std::string(std::istreambuf_iterator<char>(kernelFile), (std::istreambuf_iterator<char>()));
-
-	sources = cl::Program::Sources(1, std::make_pair(src.c_str(), src.length() + 1));
 	context = cl::Context(device);
-	program = cl::Program(context, sources, &error);
-	if (error != 0)
-	{
-		std::cout << error << '\n';
-		abort();
-	}
-	queue = cl::CommandQueue(context, device, 0Ui64, &error);
-	if (error != 0)
-	{
-		std::cout << error << '\n';
-		abort();
-	}
 
-	if (program.build("-cl-std=CL1.2") != CL_SUCCESS)
+	CreateProgram(kernelFilePath);
+}
+
+void GPUProgram::CreateProgram(std::string kernelFilePath)
+{
+	cl_int error = 0;
+	kernelFile = std::ifstream(kernelFilePath.c_str());
+	filePaths.push_back(std::string(std::istreambuf_iterator<char>(kernelFile), (std::istreambuf_iterator<char>())));
+	sources.push_back(cl::Program::Sources(1, std::make_pair(filePaths.back().c_str(), filePaths.back().length() + 1)));
+	programs.push_back(cl::Program(context, sources.back(), &error));
+	kernelFile.close();
+
+	if (programs.back().build("-cl-std=CL1.2") != CL_SUCCESS)
 	{
-		std::cout << "Error building: " << program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(device) << std::endl;
+		std::cout << "Error building: " << programs.back().getBuildInfo<CL_PROGRAM_BUILD_LOG>(device) << std::endl;
 		std::cin.get();
 		abort();
 	}
+
+	queues.push_back(cl::CommandQueue(context, device, 0Ui64, &error));
+	if (error != 0)
+	{
+		std::cout << error;
+		abort();
+	}
+	kernels.push_back(cl::Kernel());
 }
 
-void GPUProgram::SetFunction(std::string functionName)
+void GPUProgram::SetFunction(int kernelNumber, std::string functionName)
 {
 	cl_int error = 0;
-	kernel = cl::Kernel(program, functionName.c_str(), &error);
+	kernels[kernelNumber] = cl::Kernel(programs[kernelNumber], functionName.c_str(), &error);
 	if (error != 0)
 	{
 		std::cout << error;
@@ -54,9 +57,9 @@ void GPUProgram::SetFunction(std::string functionName)
 	}
 }
 
-void GPUProgram::SetVariable(int position, cl::Buffer data)
+void GPUProgram::SetVariable(int kernelNumber, int position, cl::Buffer data)
 {
-	cl_int error = kernel.setArg(position, data);
+	cl_int error = kernels[kernelNumber].setArg(position, data);
 	if (error != 0)
 	{
 		std::cout << error;
@@ -66,7 +69,7 @@ void GPUProgram::SetVariable(int position, cl::Buffer data)
 
 void GPUProgram::LaunchKernel(int kernelNumber, int offset, int size) ///size in elements
 {
-	cl_int error = queue.enqueueNDRangeKernel(kernel, cl::NDRange(offset), cl::NDRange(size));
+	cl_int error = queues[kernelNumber].enqueueNDRangeKernel(kernels[kernelNumber], cl::NDRange(offset), cl::NDRange(size));
 	if (error != 0)
 	{
 		std::cout << error;
@@ -74,9 +77,9 @@ void GPUProgram::LaunchKernel(int kernelNumber, int offset, int size) ///size in
 	}
 }
 
-void GPUProgram::ReadKernel(cl::Buffer buffer, bool shouldWait, int offset, int count, void* dataToCopyTo) ///offset and count in bytes
+void GPUProgram::ReadKernel(int kernelNumber, cl::Buffer buffer, bool shouldWait, int offset, int count, void* dataToCopyTo) ///offset and count in bytes
 {
-	cl_int error = queue.enqueueReadBuffer(buffer, shouldWait, offset, count, dataToCopyTo);
+	cl_int error = queues[kernelNumber].enqueueReadBuffer(buffer, shouldWait, offset, count, dataToCopyTo);
 	if (error != 0)
 	{
 		std::cout << error;

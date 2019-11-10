@@ -38,9 +38,7 @@ float moveSpeed = 1.0f;
 float rotationSpeed = 45.0f;
 float deltaTime;
 
-const float phi = (1.0f + glm::sqrt(5.0f)) / 2.0f;
-//TODO: Remove vector and deque use
-//TODO: Implement textures: Each cell has it's own 3D texture and points interpolate to determine where they are ont the texture.
+//TODO: Rewrite kernel, copy data to VBO more efficiently
 
 int main(){
 
@@ -48,29 +46,14 @@ int main(){
 
 	camera.position = glm::vec4(0, 0, 3, 0.0f);
 
-	Pentachoron pentachoron(4, 0, 0, 0, 2, 2, 0, 0, 2, 0, 2, 0, 2, 0, 0, 2, phi + 2, phi, phi, phi);
-	Tesseract tesseracts[3][3][3];
-	//5-Cell points (2,0,0,0) (0,2,0,0) (0,0,2,0) (0,0,0,2) (phi,phi,phi,phi) 1234, 1235, 1254, 1534, 5234
-	renderManager.tetrahedra.push_back(pentachoron.tetrahedra[0]);
-	renderManager.tetrahedra.push_back(pentachoron.tetrahedra[1]);
-	renderManager.tetrahedra.push_back(pentachoron.tetrahedra[2]);
-	renderManager.tetrahedra.push_back(pentachoron.tetrahedra[3]);
-	renderManager.tetrahedra.push_back(pentachoron.tetrahedra[4]);
-	for (int x = 0; x < 3; x++)
+	//On start, kernel: 4ms, cpu: 3ms. With beeg wall, kernel: 10ms, cpu: 21ms
+	for (int x = 0; x < 5; x++)
 	{
-		for (int y = 0; y < 3; y++)
+		for (int y = 0; y < 5; y++)
 		{
-			for (int z = 0; z < 3; z++)
+			for (int w = 0; w < 5; w++)
 			{
-				tesseracts[x][y][z] = Tesseract(x-1, -2, y-1, z-1, 0.5f);
-				renderManager.cubes.push_back(tesseracts[x][y][z].cubes[0]);
-				renderManager.cubes.push_back(tesseracts[x][y][z].cubes[1]);
-				renderManager.cubes.push_back(tesseracts[x][y][z].cubes[2]);
-				renderManager.cubes.push_back(tesseracts[x][y][z].cubes[3]);
-				renderManager.cubes.push_back(tesseracts[x][y][z].cubes[4]);
-				renderManager.cubes.push_back(tesseracts[x][y][z].cubes[5]);
-				renderManager.cubes.push_back(tesseracts[x][y][z].cubes[6]);
-				renderManager.cubes.push_back(tesseracts[x][y][z].cubes[7]);
+				renderManager.pentaRenderables.push_back(Renderable(glm::mat4x4(1), glm::vec4(-2+ x,-2 + y,-3,-2 + w), 0));
 			}
 		}
 	}
@@ -165,7 +148,7 @@ int main(){
 		}
 
 		deltaTime = frameTime.getElapsedTime().asSeconds();
-		std::cout << 1.0f/deltaTime << '\n';
+		std::cout << deltaTime << '\n';
 		frameTime.restart();
 		window.setActive(true);
 		ProcessInput(&window);
@@ -273,6 +256,14 @@ void ProcessInput(sf::Window* window)
 	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Num1))
 	{
 		camera.position += rotation * glm::vec4(0, 0, 0, -deltaTime * moveSpeed);
+	}
+	if (sf::Keyboard::isKeyPressed(sf::Keyboard::P))
+	{
+		if (renderManager.renderMode == false)
+			renderManager.renderMode = true;
+		else
+			renderManager.renderMode = false;
+	
 	}
 	//Mouse input
 	if (firstMouse) // this bool variable is initially set to true
