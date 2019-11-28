@@ -11,11 +11,13 @@ typedef struct
 {
 	float4 point;
 	float4 direction;
+	float3 texCoords; //alignment 4
+	float3 texDirection; //alignment 4
 } Line;
 
 __kernel void CrossSection(__global Mat4* modelMatrices, __global float4* modelOffsets, //1 per penta
 	__global int* modelIDs, __global int* tetraIDs, //1 per tetra
-	__global float4* outPoints, __global char* outStates, //6 per tetra
+	__global float4* outPoints, __global char* outStates, __global float3* outTexCoords, //6 per tetra
 	__constant Mat4* cameraMatrix, __constant float4* cameraOffset, //1
 	__constant Line* modelLines)
 
@@ -93,6 +95,7 @@ __kernel void CrossSection(__global Mat4* modelMatrices, __global float4* modelO
 				posVec += magnitude * dirVec;
 				outStates[(thisID*6) + i] = 0;
 				outPoints[(thisID*6) + i] = posVec;
+				outTexCoords[(thisID*6) + i] = tetraLines[i].texCoords + (magnitude * tetraLines[i].texDirection);
 			}
 			else
 			{

@@ -120,16 +120,21 @@ RenderManager::RenderManager()
 	crossSection.SetFunction(0, "CrossSection");
 	crossSection.CreateProgram("Assets\\Kernels\\TetraRenderer.cl");
 	crossSection.SetFunction(1, "MakeFace");
-	pentachoronModel = Pentachoron(0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
+	pentachoronModel[0] = Tetrahedron(0,0,0,0, 0,0,0, 1,0,0,0, 1,0,0, 0,1,0,0, 0,1,0, 0,0,1,0, 0,0,1);
+	pentachoronModel[1] = Tetrahedron(0,0,0,1, 0,0,0, 1,0,0,0, 1,0,0, 0,1,0,0, 0,1,0, 0,0,1,0, 0,0,1);
+	pentachoronModel[2] = Tetrahedron(0,0,0,0, 0,0,0, 0,0,0,1, 1,0,0, 0,1,0,0, 0,1,0, 0,0,1,0, 0,0,1);
+	pentachoronModel[3] = Tetrahedron(0,0,0,0, 0,0,0, 1,0,0,0, 1,0,0, 0,0,0,1, 0,1,0, 0,0,1,0, 0,0,1);
+	pentachoronModel[4] = Tetrahedron(0,0,0,0, 0,0,0, 1,0,0,0, 1,0,0, 0,1,0,0, 0,1,0, 0,0,0,1, 0,0,1);
+
 	Line modelLines[30];
 	for (int i = 0; i < 5; i++) 
 	{
 		for (int l = 0; l < 6; l++)
 		{
-			modelLines[(i * 6) + l] = pentachoronModel.tetrahedra[i].lines[l];
+			modelLines[(i * 6) + l] = pentachoronModel[i].lines[l];
 		}
 	}
-	modelBuffer = cl::Buffer(crossSection.context, CL_MEM_HOST_WRITE_ONLY | CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(Pentachoron), modelLines);
+	modelBuffer = cl::Buffer(crossSection.context, CL_MEM_HOST_WRITE_ONLY | CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(Tetrahedron)*5, modelLines);
 }
 
 unsigned int RenderManager::SetBuffer(Camera& camera, unsigned int VBOaddress)
@@ -150,6 +155,7 @@ unsigned int RenderManager::SetBuffer(Camera& camera, unsigned int VBOaddress)
 
 	glm::vec4* points = new glm::vec4[lineSize];
 	char* states = new char[lineSize];
+	glm::vec4* texCoords = new glm::vec4[lineSize];
 
 	for (int i = 0; i < pentaSize; i++)
 	{
@@ -167,8 +173,9 @@ unsigned int RenderManager::SetBuffer(Camera& camera, unsigned int VBOaddress)
 	cl::Buffer modelOffsetsBuffer(crossSection.context, CL_MEM_HOST_NO_ACCESS | CL_MEM_COPY_HOST_PTR, sizeof(glm::vec4)*pentaSize, modelOffsets);
 	cl::Buffer modelIDBuffer(crossSection.context, CL_MEM_HOST_NO_ACCESS | CL_MEM_COPY_HOST_PTR, sizeof(int) * tetraSize, modelIDs);
 	cl::Buffer tetraIDBuffer(crossSection.context, CL_MEM_HOST_NO_ACCESS | CL_MEM_COPY_HOST_PTR, sizeof(int) * tetraSize, tetraIDs);
-	cl::Buffer pointBuffer(crossSection.context, CL_MEM_HOST_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(glm::vec4) * lineSize, points);
+	cl::Buffer pointBuffer(crossSection.context, CL_MEM_HOST_READ_ONLY, sizeof(glm::vec4) * lineSize);
 	cl::Buffer stateBuffer(crossSection.context, CL_MEM_HOST_READ_ONLY, sizeof(char) * lineSize);
+	cl::Buffer texCoordBuffer(crossSection.context, CL_MEM_HOST_READ_ONLY, sizeof(glm::vec4) * lineSize);
 	cl::Buffer matrixBuffer(crossSection.context, CL_MEM_HOST_NO_ACCESS | CL_MEM_COPY_HOST_PTR, sizeof(glm::mat4), camera.GetTransformValuePtr());
 	cl::Buffer offsetBuffer(crossSection.context, CL_MEM_HOST_NO_ACCESS | CL_MEM_COPY_HOST_PTR, sizeof(glm::vec4), glm::value_ptr(camera.position));
 
@@ -178,9 +185,10 @@ unsigned int RenderManager::SetBuffer(Camera& camera, unsigned int VBOaddress)
 	crossSection.SetVariable(0, 3, tetraIDBuffer);
 	crossSection.SetVariable(0, 4, pointBuffer);
 	crossSection.SetVariable(0, 5, stateBuffer);
-	crossSection.SetVariable(0, 6, matrixBuffer);
-	crossSection.SetVariable(0, 7, offsetBuffer);
-	crossSection.SetVariable(0, 8, modelBuffer);
+	crossSection.SetVariable(0, 6, texCoordBuffer);
+	crossSection.SetVariable(0, 7, matrixBuffer);
+	crossSection.SetVariable(0, 8, offsetBuffer);
+	crossSection.SetVariable(0, 9, modelBuffer);
 	crossSection.LaunchKernel(0, 0, tetraSize);
 
 	delete[]  modelMatrices;
@@ -190,7 +198,7 @@ unsigned int RenderManager::SetBuffer(Camera& camera, unsigned int VBOaddress)
 #pragma endregion
 	crossSection.ReadKernel(0, pointBuffer, GL_TRUE, 0, sizeof(glm::vec4) * lineSize, points);
 	crossSection.ReadKernel(0, stateBuffer, GL_TRUE, 0, sizeof(char) * lineSize, states); // 8 ms
-	std::cout << renderMode << '\n';
+	crossSection.ReadKernel(0, texCoordBuffer, GL_TRUE, 0, sizeof(glm::vec4) * lineSize, texCoords);
 	if (renderMode)
 	{
 #pragma region tetrahedron kernel
@@ -432,20 +440,22 @@ unsigned int RenderManager::SetBuffer(Camera& camera, unsigned int VBOaddress)
 	} //7 ms
 
 #pragma region Buffer setup
-	float* vboData = new float[vertexPos.size() * 7];
+	float* vboData = new float[vertexPos.size() * 9];
 
 	for (int i = 0; i < vertexPos.size(); i++)
 	{
-		vboData[0 + (i * 7)] = vertexPos[i].x;
-		vboData[1 + (i * 7)] = vertexPos[i].y;
-		vboData[2 + (i * 7)] = vertexPos[i].z;
-		vboData[3 + (i * 7)] = 1;
-		vboData[4 + (i * 7)] = vertexCol[i].x;
-		vboData[5 + (i * 7)] = vertexCol[i].y;
-		vboData[6 + (i * 7)] = vertexCol[i].z;
+		vboData[0 + (i * 9)] = vertexPos[i].x;
+		vboData[1 + (i * 9)] = vertexPos[i].y;
+		vboData[2 + (i * 9)] = vertexPos[i].z;
+		vboData[3 + (i * 9)] = 1;
+		vboData[4 + (i * 9)] = 1;
+		vboData[5 + (i * 9)] = 1;
+		vboData[6 + (i * 9)] = texCoords[i].x;
+		vboData[7 + (i * 9)] = texCoords[i].y;
+		vboData[8 + (i * 9)] = texCoords[i].z;
 	}
 	glBindBuffer(GL_ARRAY_BUFFER, VBOaddress);
-	glBufferData(GL_ARRAY_BUFFER, 7 * sizeof(float) * vertexPos.size(), vboData, GL_DYNAMIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, 9 * sizeof(float) * vertexPos.size(), vboData, GL_DYNAMIC_DRAW);
 #pragma endregion
 	delete[] vboData;
 	delete[] points;

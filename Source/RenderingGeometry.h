@@ -13,10 +13,12 @@ struct Line
 {
 	glm::vec4 point;
 	glm::vec4 direction;
+	glm::vec4 textureCoords;
+	glm::vec4 textureDirection;
 
 	Line();
-	Line(glm::vec4, glm::vec4);
-	Line(float, float, float, float, float, float, float, float);
+	Line(glm::vec4, glm::vec4, glm::vec3, glm::vec3);
+	Line(float, float, float, float, float, float, float, float, float, float, float, float, float, float);
 
 	void Translate(float, float, float, float);
 	void Rotate(float, float, float, float, float, float);
@@ -24,26 +26,18 @@ struct Line
 	void TransformAround(glm::mat4x4, glm::vec4);
 };
 
-struct Triangle
-{
-	Line lines[3];
-
-	Triangle();
-	Triangle(glm::vec4, glm::vec4, glm::vec4);
-	Triangle(float, float, float, float, float, float, float, float, float, float, float, float);
-};
-
 struct Tetrahedron
 {
 	Line lines[6];
 
 	Tetrahedron();
-	Tetrahedron(glm::vec4, glm::vec4, glm::vec4, glm::vec4);
-	Tetrahedron(float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float);
+	Tetrahedron(glm::vec4, glm::vec3, glm::vec4, glm::vec3, glm::vec4, glm::vec3, glm::vec4, glm::vec3);
+	Tetrahedron(float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float);
 
 	void Translate(float, float, float, float);
 };
 
+/*
 struct Cube
 {
 	Line lines[12];
@@ -64,8 +58,8 @@ struct Pentachoron
 	Tetrahedron tetrahedra[5];
 
 	Pentachoron();
-	Pentachoron(glm::vec4, glm::vec4, glm::vec4, glm::vec4, glm::vec4);
-	Pentachoron(float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float);
+	Pentachoron(glm::vec4, glm::vec3, glm::vec4, glm::vec3, glm::vec4, glm::vec3, glm::vec4, glm::vec3, glm::vec4, glm::vec3);
+	Pentachoron(float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float);
 
 	void Translate(float, float, float, float);
 };
@@ -83,3 +77,4 @@ struct Tesseract
 	void Rotate(float, float, float, float, float, float);
 	void Transform(glm::mat4x4);
 };
+*/

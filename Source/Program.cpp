@@ -38,22 +38,21 @@ float moveSpeed = 1.0f;
 float rotationSpeed = 45.0f;
 float deltaTime;
 
-//TODO: Rewrite kernel, copy data to VBO more efficiently
+//TODO: Add textures to VAO and texture coords to cross sectioning
 
 int main(){
-
 	glm::mat4x4 perspective = glm::perspective(45.0f, (float)screenx / (float)screeny, 0.1f, 100.0f);
 
-	camera.position = glm::vec4(0, 0, 3, 0.0f);
+	camera.position = glm::vec4(0, 0, 3, 0.1f);
 
 	//On start, kernel: 4ms, cpu: 3ms. With beeg wall, kernel: 10ms, cpu: 21ms
-	for (int x = 0; x < 5; x++)
+	for (int x = 0; x < 2; x++)
 	{
-		for (int y = 0; y < 5; y++)
+		for (int y = 0; y < 2; y++)
 		{
-			for (int w = 0; w < 5; w++)
+			for (int w = 0; w < 2; w++)
 			{
-				renderManager.pentaRenderables.push_back(Renderable(glm::mat4x4(1), glm::vec4(-2+ x,-2 + y,-3,-2 + w), 0));
+				renderManager.pentaRenderables.push_back(Renderable(glm::mat4x4(1), glm::vec4(-0+ x,-0 + y,-3,-0 + w), 0));
 			}
 		}
 	}
@@ -79,17 +78,66 @@ int main(){
 	glGenBuffers(1, &VBO);
 	glGenVertexArrays(1, &VAO);
 
-	unsigned int stride = sizeof(float)*7;
+	unsigned int stride = sizeof(float)*9;
 	glBindVertexArray(VAO);
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, stride, (void*)0); //Position
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride, (void*)0); //Position
 	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, stride, (void*)(4*sizeof(float))); //Color
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, stride, (void*)(3*sizeof(float))); //Color
 	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, stride, (void*)(6 * sizeof(float))); //Texture coords
+	glEnableVertexAttribArray(2);
 
-	//perspective = glm::mat4x4(1.0f, 0, 0, 0, 0, 1.0f*((float)screenx/(float)screeny), 0, 0, 0, 0, 1.0f/100.0f, 0, 0, 0, 0, 1);
+	unsigned int texture;
+	glGenTextures(1, &texture);
+
+	glBindTexture(GL_TEXTURE_3D, texture);
+	unsigned char data[2][2][2][4];
+#pragma region Texture Data
+	data[0][0][0][0] = (unsigned char)255;
+	data[0][0][0][1] = (unsigned char)255;
+	data[0][0][0][2] = (unsigned char)255;
+	data[0][0][0][3] = (unsigned char)255;
+	data[0][0][1][0] = (unsigned char)255;
+	data[0][0][1][1] = (unsigned char)0;
+	data[0][0][1][2] = (unsigned char)0;
+	data[0][0][1][3] = (unsigned char)255;
+	data[0][1][0][0] = (unsigned char)0;
+	data[0][1][0][1] = (unsigned char)255;
+	data[0][1][0][2] = (unsigned char)0;
+	data[0][1][0][3] = (unsigned char)255;
+	data[0][1][1][0] = (unsigned char)255;
+	data[0][1][1][1] = (unsigned char)255;
+	data[0][1][1][2] = (unsigned char)255;
+	data[0][1][1][3] = (unsigned char)255;
+	data[1][0][0][0] = (unsigned char)0;
+	data[1][0][0][1] = (unsigned char)0;
+	data[1][0][0][2] = (unsigned char)255;
+	data[1][0][0][3] = (unsigned char)255;
+	data[1][0][1][0] = (unsigned char)255;
+	data[1][0][1][1] = (unsigned char)255;
+	data[1][0][1][2] = (unsigned char)255;
+	data[1][0][1][3] = (unsigned char)255;
+	data[1][1][0][0] = (unsigned char)255;
+	data[1][1][0][1] = (unsigned char)255;
+	data[1][1][0][2] = (unsigned char)255;
+	data[1][1][0][3] = (unsigned char)255;
+	data[1][1][1][0] = (unsigned char)255;
+	data[1][1][1][1] = (unsigned char)255;
+	data[1][1][1][2] = (unsigned char)255;
+	data[1][1][1][3] = (unsigned char)255;
+#pragma endregion
+	glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA, 2, 2, 2, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_BORDER);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
 	unsigned int perspectiveLoc = glGetUniformLocation(shader.ID, "perspectiveMat");
 	glUniformMatrix4fv(perspectiveLoc, 1, GL_FALSE, glm::value_ptr(perspective));
+
+	shader.setInt("texture0", 0);
 
 	window.setMouseCursorVisible(false);
 	window.setMouseCursorGrabbed(true);
@@ -156,6 +204,8 @@ int main(){
 		glClear(GL_DEPTH_BUFFER_BIT);
 
 		shader.use();
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_3D, texture);
 		glBindVertexArray(VAO);
 		glBindBuffer(GL_ARRAY_BUFFER, VBO);
 		
@@ -259,6 +309,8 @@ void ProcessInput(sf::Window* window)
 	}
 	if (sf::Keyboard::isKeyPressed(sf::Keyboard::P))
 	{
+		std::cout << glGetError() << '\n';
+		abort();
 		if (renderManager.renderMode == false)
 			renderManager.renderMode = true;
 		else

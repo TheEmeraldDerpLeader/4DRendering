@@ -5,18 +5,24 @@ Line::Line()
 {
 	point = glm::vec4(0, 0, 0, 0);
 	direction = glm::vec4(0, 0, 0, 0);
+	textureCoords = glm::vec4(0, 0, 0, 0);
+	textureDirection = glm::vec4(0, 0, 0, 0);
 }
 
-Line::Line(glm::vec4 pointVec, glm::vec4 directionVec)
+Line::Line(glm::vec4 pointVec, glm::vec4 directionVec, glm::vec3 textureCoordsVec, glm::vec3 textureDirectionVec)
 {
 	point = pointVec;
 	direction = directionVec;
+	textureCoords = glm::vec4(textureCoordsVec,0);
+	textureDirection = glm::vec4(textureDirectionVec,0);
 }
 
-Line::Line(float xPos, float yPos, float zPos, float wPos, float xDir, float yDir, float zDir, float wDir)
+Line::Line(float xPos, float yPos, float zPos, float wPos, float xDir, float yDir, float zDir, float wDir, float xTPos, float yTPos, float zTPos, float xTDir, float yTDir, float zTDir)
 {
 	point = glm::vec4(xPos, yPos, zPos, wPos);
 	direction = glm::vec4(xDir, yDir, zDir, wDir);
+	textureCoords = glm::vec4(xTPos, yTPos, zTPos,0);
+	textureDirection = glm::vec4(xTDir, yTDir, zTDir,0);
 }
 void Line::Translate(float x, float y, float z, float w)
 {
@@ -53,27 +59,6 @@ void Line::TransformAround(glm::mat4x4 matrix, glm::vec4 pivot)
 	direction = matrix * direction;
 	point += pivot;
 }
-//Triangle
-Triangle::Triangle()
-{
-	lines[0] = Line();
-	lines[1] = Line();
-	lines[2] = Line();
-}
-
-Triangle::Triangle(glm::vec4 point1, glm::vec4 point2, glm::vec4 point3)
-{
-	lines[0] = Line(point1, point2 - point1);
-	lines[1] = Line(point2, point3 - point2);
-	lines[2] = Line(point3, point1 - point3);
-}
-
-Triangle::Triangle(float x1, float y1, float z1, float w1, float x2, float y2, float z2, float w2, float x3, float y3, float z3, float w3)
-{
-	lines[0] = Line(glm::vec4(x1, y1, z1, w1), glm::vec4(x2 - x1, y2 - y1, z2 - z1, w2 - w1));
-	lines[1] = Line(glm::vec4(x2, y2, z2, w2), glm::vec4(x3 - x2, y3 - y2, z3 - z2, w3 - w2));
-	lines[2] = Line(glm::vec4(x3, y3, z3, w3), glm::vec4(x1 - x3, y1 - y3, z1 - z3, w1 - w3));
-}
 //Tetrahedron
 Tetrahedron::Tetrahedron()
 {
@@ -85,24 +70,24 @@ Tetrahedron::Tetrahedron()
 	lines[5] = Line();
 }
 
-Tetrahedron::Tetrahedron(glm::vec4 point1, glm::vec4 point2, glm::vec4 point3, glm::vec4 point4)
+Tetrahedron::Tetrahedron(glm::vec4 point1, glm::vec3 point1Tex, glm::vec4 point2, glm::vec3 point2Tex, glm::vec4 point3, glm::vec3 point3Tex, glm::vec4 point4, glm::vec3 point4Tex)
 {
-	lines[0] = Line(point1, point2 - point1);
-	lines[1] = Line(point1, point3 - point1);
-	lines[2] = Line(point1, point4 - point1);
-	lines[3] = Line(point2, point3 - point2);
-	lines[4] = Line(point2, point4 - point2);
-	lines[5] = Line(point3, point4 - point3);
+	lines[0] = Line(point1, point2 - point1, point1Tex, point2Tex - point1Tex);
+	lines[1] = Line(point1, point3 - point1, point1Tex, point3Tex - point1Tex);
+	lines[2] = Line(point1, point4 - point1, point1Tex, point4Tex - point1Tex);
+	lines[3] = Line(point2, point3 - point2, point2Tex, point3Tex - point2Tex);
+	lines[4] = Line(point2, point4 - point2, point2Tex, point4Tex - point2Tex);
+	lines[5] = Line(point3, point4 - point3, point3Tex, point4Tex - point3Tex);
 }
 
-Tetrahedron::Tetrahedron(float x1, float y1, float z1, float w1, float x2, float y2, float z2, float w2, float x3, float y3, float z3, float w3, float x4, float y4, float z4, float w4)
+Tetrahedron::Tetrahedron(float x1, float y1, float z1, float w1, float xt1, float yt1, float zt1, float x2, float y2, float z2, float w2, float xt2, float yt2, float zt2, float x3, float y3, float z3, float w3, float xt3, float yt3, float zt3, float x4, float y4, float z4, float w4, float xt4, float yt4, float zt4) 
 {
-	lines[0] = Line(glm::vec4(x1, y1, z1, w1), glm::vec4(x2 - x1, y2 - y1, z2 - z1, w2 - w1));
-	lines[1] = Line(glm::vec4(x1, y1, z1, w1), glm::vec4(x3 - x1, y3 - y1, z3 - z1, w3 - w1));
-	lines[2] = Line(glm::vec4(x1, y1, z1, w1), glm::vec4(x4 - x1, y4 - y1, z4 - z1, w4 - w1));
-	lines[3] = Line(glm::vec4(x2, y2, z2, w2), glm::vec4(x3 - x2, y3 - y2, z3 - z2, w3 - w2));
-	lines[4] = Line(glm::vec4(x2, y2, z2, w2), glm::vec4(x4 - x2, y4 - y2, z4 - z2, w4 - w2));
-	lines[5] = Line(glm::vec4(x3, y3, z3, w3), glm::vec4(x4 - x3, y4 - y3, z4 - z3, w4 - w3));
+	lines[0] = Line(glm::vec4(x1, y1, z1, w1), glm::vec4(x2 - x1, y2 - y1, z2 - z1, w2 - w1), glm::vec3(xt1, yt1, zt1), glm::vec3(xt2 - xt1, yt2 - yt1, zt2 - zt1));
+	lines[1] = Line(glm::vec4(x1, y1, z1, w1), glm::vec4(x3 - x1, y3 - y1, z3 - z1, w3 - w1), glm::vec3(xt1, yt1, zt1), glm::vec3(xt3 - xt1, yt3 - yt1, zt3 - zt1));
+	lines[2] = Line(glm::vec4(x1, y1, z1, w1), glm::vec4(x4 - x1, y4 - y1, z4 - z1, w4 - w1), glm::vec3(xt1, yt1, zt1), glm::vec3(xt4 - xt1, yt4 - yt1, zt4 - zt1));
+	lines[3] = Line(glm::vec4(x2, y2, z2, w2), glm::vec4(x3 - x2, y3 - y2, z3 - z2, w3 - w2), glm::vec3(xt2, yt2, zt2), glm::vec3(xt3 - xt2, yt3 - yt2, zt3 - zt2));
+	lines[4] = Line(glm::vec4(x2, y2, z2, w2), glm::vec4(x4 - x2, y4 - y2, z4 - z2, w4 - w2), glm::vec3(xt2, yt2, zt2), glm::vec3(xt4 - xt2, yt4 - yt2, zt4 - zt2));
+	lines[5] = Line(glm::vec4(x3, y3, z3, w3), glm::vec4(x4 - x3, y4 - y3, z4 - z3, w4 - w3), glm::vec3(xt3, yt3, zt3), glm::vec3(xt4 - xt3, yt4 - yt3, zt4 - zt3));
 }
 void Tetrahedron::Translate(float x, float y, float z, float w)
 {
@@ -113,6 +98,8 @@ void Tetrahedron::Translate(float x, float y, float z, float w)
 	lines[4].Translate(x, y, z, w);
 	lines[5].Translate(x, y, z, w);
 }
+
+/*
 //Cube
 Cube::Cube()
 {
@@ -236,23 +223,23 @@ Pentachoron::Pentachoron()
 	tetrahedra[3] = Tetrahedron();
 	tetrahedra[4] = Tetrahedron();
 }
-
-Pentachoron::Pentachoron(glm::vec4 point1, glm::vec4 point2, glm::vec4 point3, glm::vec4 point4, glm::vec4 point5)
+//Pentachoron have multiple cells! Change to a tetrahedra dependent renderer.
+Pentachoron::Pentachoron(glm::vec4 point1, glm::vec3 point1Tex, glm::vec4 point2, glm::vec3 point2Tex, glm::vec4 point3, glm::vec3 point3Tex, glm::vec4 point4, glm::vec3 point4Tex, glm::vec4 point5, glm::vec3 point5Tex)
 {
-	tetrahedra[0] = Tetrahedron(point1, point2, point3, point4);
-	tetrahedra[1] = Tetrahedron(point1, point2, point3, point5);
-	tetrahedra[2] = Tetrahedron(point1, point2, point5, point4);
-	tetrahedra[3] = Tetrahedron(point1, point5, point3, point4);
-	tetrahedra[4] = Tetrahedron(point5, point2, point3, point4);
+	tetrahedra[0] = Tetrahedron(point1, point1Tex, point2, point2Tex, point3, point3Tex, point4, point4Tex);
+	tetrahedra[1] = Tetrahedron(point1, point1Tex, point2, point2Tex, point3, point3Tex, point5, point5Tex);
+	tetrahedra[2] = Tetrahedron(point1, point1Tex, point2, point2Tex, point5, point5Tex, point4, point4Tex);
+	tetrahedra[3] = Tetrahedron(point1, point1Tex, point5, point5Tex, point3, point3Tex, point4, point4Tex);
+	tetrahedra[4] = Tetrahedron(point5, point5Tex, point2, point2Tex, point3, point3Tex, point4, point4Tex);
 }
 
-Pentachoron::Pentachoron(float x1, float y1, float z1, float w1, float x2, float y2, float z2, float w2, float x3, float y3, float z3, float w3, float x4, float y4, float z4, float w4, float x5, float y5, float z5, float w5)
+Pentachoron::Pentachoron(float x1, float y1, float z1, float w1, float xt1, float yt1, float zt1, float x2, float y2, float z2, float w2, float xt2, float yt2, float zt2, float x3, float y3, float z3, float w3, float xt3, float yt3, float zt3, float x4, float y4, float z4, float w4, float xt4, float yt4, float zt4, float x5, float y5, float z5, float w5, float xt5, float yt5, float zt5)
 {
-	tetrahedra[0] = Tetrahedron(x1, y1, z1, w1, x2, y2, z2, w2, x3, y3, z3, w3, x4, y4, z4, w4);
-	tetrahedra[1] = Tetrahedron(x1, y1, z1, w1, x2, y2, z2, w2, x3, y3, z3, w3, x5, y5, z5, w5);
-	tetrahedra[2] = Tetrahedron(x1, y1, z1, w1, x2, y2, z2, w2, x5, y5, z5, w5, x4, y4, z4, w4);
-	tetrahedra[3] = Tetrahedron(x1, y1, z1, w1, x5, y5, z5, w5, x3, y3, z3, w3, x4, y4, z4, w4);
-	tetrahedra[4] = Tetrahedron(x5, y5, z5, w5, x2, y2, z2, w2, x3, y3, z3, w3, x4, y4, z4, w4);
+	tetrahedra[0] = Tetrahedron(x1, y1, z1, w1, xt1, yt1, zt1, x2, y2, z2, w2, xt2, yt2, zt2, x3, y3, z3, w3, xt3, yt3, zt3, x4, y4, z4, w4, xt4, yt4, zt4);
+	tetrahedra[1] = Tetrahedron(x1, y1, z1, w1, xt1, yt1, zt1, x2, y2, z2, w2, xt2, yt2, zt2, x3, y3, z3, w3, xt3, yt3, zt3, x5, y5, z5, w5, xt5, yt5, zt5);
+	tetrahedra[2] = Tetrahedron(x1, y1, z1, w1, xt1, yt1, zt1, x2, y2, z2, w2, xt2, yt2, zt2, x5, y5, z5, w5, xt5, yt5, zt5, x4, y4, z4, w4, xt4, yt4, zt4);
+	tetrahedra[3] = Tetrahedron(x1, y1, z1, w1, xt1, yt1, zt1, x5, y5, z5, w5, xt5, yt5, zt5, x3, y3, z3, w3, xt3, yt3, zt3, x4, y4, z4, w4, xt4, yt4, zt4);
+	tetrahedra[4] = Tetrahedron(x5, y5, z5, w5, xt5, yt5, zt5, x2, y2, z2, w2, xt2, yt2, zt2, x3, y3, z3, w3, xt3, yt3, zt3, x4, y4, z4, w4, xt4, yt4, zt4);
 }
 
 void Pentachoron::Translate(float x, float y, float z, float w)
@@ -380,3 +367,5 @@ void Tesseract::Transform(glm::mat4x4 matrix)
 	cubes[6].TransformAround(matrix, center);
 	cubes[7].TransformAround(matrix, center);
 }
+
+*/

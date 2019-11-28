@@ -54,7 +54,7 @@ class RenderManager
 public:
 	bool renderMode;
 	int faceColor;
-	Pentachoron pentachoronModel;
+	Tetrahedron pentachoronModel[5];
 	cl::Buffer modelBuffer;
 	std::vector<Renderable> pentaRenderables;
 
