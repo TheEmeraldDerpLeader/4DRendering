@@ -1,6 +1,8 @@
 # 4DRendering
 A 4D rendering thing I've been working on.
-I'll need to write this README some other time, but for now I'll say this:
+I'll need to write this README some other time, but for now I'll say this: 
+
+--NOTE: THIS IS OUTDATED--
 
 This project is a 4D renderer that takes an approach known as the cross-sectional approach.
 You may have heard of something called "4D projections" before; This is completely different from a projection. Put simply, the cross-sectional approach takes a "slice" of the 4D world and uses that slice to render what you see. This slice is actually a 3D space rather than a 2D plane. 4D objects have a 3D surfaces called cells. These cells create a face when they cross your viewing slice. Each cell of a 4D object will only create one face. For example, a pentahedron (4D tetrahedron) has 5 cells and will appear with at most 5 faces. This causes interesting shapes to form from rotation and moving in 4D.
