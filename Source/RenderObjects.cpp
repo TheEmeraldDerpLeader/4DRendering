@@ -120,11 +120,54 @@ RenderManager::RenderManager()
 	crossSection.SetFunction(0, "CrossSection");
 	crossSection.CreateProgram("Assets\\Kernels\\TetraRenderer.cl");
 	crossSection.SetFunction(1, "MakeFace");
-	pentachoronModel[0] = Tetrahedron(0,0,0,0, 0,0,0, 1,0,0,0, 1,0,0, 0,1,0,0, 0,1,0, 0,0,1,0, 0,0,1);
-	pentachoronModel[1] = Tetrahedron(0,0,0,1, 0,0,0, 1,0,0,0, 1,0,0, 0,1,0,0, 0,1,0, 0,0,1,0, 0,0,1);
-	pentachoronModel[2] = Tetrahedron(0,0,0,0, 0,0,0, 0,0,0,1, 1,0,0, 0,1,0,0, 0,1,0, 0,0,1,0, 0,0,1);
-	pentachoronModel[3] = Tetrahedron(0,0,0,0, 0,0,0, 1,0,0,0, 1,0,0, 0,0,0,1, 0,1,0, 0,0,1,0, 0,0,1);
-	pentachoronModel[4] = Tetrahedron(0,0,0,0, 0,0,0, 1,0,0,0, 1,0,0, 0,1,0,0, 0,1,0, 0,0,0,1, 0,0,1);
+	//Red Gradient
+	//pentachoronModel[0] = Tetrahedron(0,0,0,0, 0,0,0, 1,0,0,0, 0,0,0, 0,1,0,0, 0,0,0, 0,0,1,0, 0,0,0); 
+	//pentachoronModel[1] = Tetrahedron(0,0,0,1, 1,0,0, 1,0,0,0, 0,0,0, 0,1,0,0, 0,0,0, 0,0,1,0, 0,0,0);
+	//pentachoronModel[2] = Tetrahedron(0,0,0,0, 0,0,0, 0,0,0,1, 1,0,0, 0,1,0,0, 0,0,0, 0,0,1,0, 0,0,0);
+	//pentachoronModel[3] = Tetrahedron(0,0,0,0, 0,0,0, 1,0,0,0, 0,0,0, 0,0,0,1, 1,0,0, 0,0,1,0, 0,0,0);
+	//pentachoronModel[4] = Tetrahedron(0,0,0,0, 0,0,0, 1,0,0,0, 0,0,0, 0,1,0,0, 0,0,0, 0,0,0,1, 1,0,0);
+
+	//celestial Colors
+	//pentachoronModel[0] = Tetrahedron(0,0,0,0, 0,0,0, 1,0,0,0, 1,0,0, 0,1,0,0, 0,1,0, 0,0,1,0, 0,0,1);
+	//pentachoronModel[1] = Tetrahedron(0,0,0,1, 0,0,0, 1,0,0,0, 1,0,0, 0,1,0,0, 0,1,0, 0,0,1,0, 0,0,1);
+	//pentachoronModel[2] = Tetrahedron(0,0,0,0, 0,0,0, 0,0,0,1, 1,0,0, 0,1,0,0, 0,1,0, 0,0,1,0, 0,0,1);
+	//pentachoronModel[3] = Tetrahedron(0,0,0,0, 0,0,0, 1,0,0,0, 1,0,0, 0,0,0,1, 0,1,0, 0,0,1,0, 0,0,1);
+	//pentachoronModel[4] = Tetrahedron(0,0,0,0, 0,0,0, 1,0,0,0, 1,0,0, 0,1,0,0, 0,1,0, 0,0,0,1, 0,0,1);
+
+	//RGB Colors
+	//pentachoronModel[0] = Tetrahedron(0,0,0,0, 1,1,1, 1,0,0,0, 1,0,0, 0,1,0,0, 0,1,0, 0,0,1,0, 0,0,1);
+	//pentachoronModel[1] = Tetrahedron(0,0,0,1, 1,1,1, 1,0,0,0, 1,0,0, 0,1,0,0, 0,1,0, 0,0,1,0, 0,0,1);
+	//pentachoronModel[2] = Tetrahedron(0,0,0,0, 1,1,1, 0,0,0,1, 1,0,0, 0,1,0,0, 0,1,0, 0,0,1,0, 0,0,1);
+	//pentachoronModel[3] = Tetrahedron(0,0,0,0, 1,1,1, 1,0,0,0, 1,0,0, 0,0,0,1, 0,1,0, 0,0,1,0, 0,0,1);
+	//pentachoronModel[4] = Tetrahedron(0,0,0,0, 1,1,1, 1,0,0,0, 1,0,0, 0,1,0,0, 0,1,0, 0,0,0,1, 0,0,1);
+
+	//Checkers
+	//pentachoronModel[0] = Tetrahedron(0,0,0,0, 0,0,0, 1,0,0,0, 0,1,0, 0,1,0,0, 0,0,1, 0,0,1,0, 0,0,0);
+	//pentachoronModel[1] = Tetrahedron(0,0,0,1, 1,0,0, 1,0,0,0, 0,1,0, 0,1,0,0, 0,0,1, 0,0,1,0, 0,0,0);
+	//pentachoronModel[2] = Tetrahedron(0,0,0,0, 0,1,0, 0,0,0,1, 1,0,0, 0,1,0,0, 0,0,1, 0,0,1,0, 0,0,0);
+	//pentachoronModel[3] = Tetrahedron(0,0,0,0, 0,0,1, 1,0,0,0, 0,1,0, 0,0,0,1, 1,0,0, 0,0,1,0, 0,0,0);
+	//pentachoronModel[4] = Tetrahedron(0,0,0,0, 0,0,0, 1,0,0,0, 0,1,0, 0,1,0,0, 0,0,1, 0,0,0,1, 1,0,0);
+
+	//0.5 Checkers
+	//pentachoronModel[0] = Tetrahedron(0,0,0,0, 0,0,0, 1,0,0,0, 0,0.5f,0, 0,1,0,0, 0,0,0.5f, 0,0,1,0, 0,0,0);
+	//pentachoronModel[1] = Tetrahedron(0,0,0,1, 0.5f,0,0, 1,0,0,0, 0,0.5f,0, 0,1,0,0, 0,0,0.5f, 0,0,1,0, 0,0,0);
+	//pentachoronModel[2] = Tetrahedron(0,0,0,0, 0,0.5f,0, 0,0,0,1, 0.5f,0,0, 0,1,0,0, 0,0,0.5f, 0,0,1,0, 0,0,0);
+	//pentachoronModel[3] = Tetrahedron(0,0,0,0, 0,0,0.5f, 1,0,0,0, 0,0.5f,0, 0,0,0,1, 0.5f,0,0, 0,0,1,0, 0,0,0);
+	//pentachoronModel[4] = Tetrahedron(0,0,0,0, 0,0,0, 1,0,0,0, 0,0.5f,0, 0,1,0,0, 0,0,0.5f, 0,0,0,1, 0.5f,0,0);
+
+	//2 Checkers
+	//pentachoronModel[0] = Tetrahedron(0,0,0,0, 0,0,0, 1,0,0,0, 0,2,0, 0,1,0,0, 0,0,2, 0,0,1,0, 0,0,0);
+	//pentachoronModel[1] = Tetrahedron(0,0,0,1, 2,0,0, 1,0,0,0, 0,2,0, 0,1,0,0, 0,0,2, 0,0,1,0, 0,0,0);
+	//pentachoronModel[2] = Tetrahedron(0,0,0,0, 0,2,0, 0,0,0,1, 2,0,0, 0,1,0,0, 0,0,2, 0,0,1,0, 0,0,0);
+	//pentachoronModel[3] = Tetrahedron(0,0,0,0, 0,0,2, 1,0,0,0, 0,2,0, 0,0,0,1, 2,0,0, 0,0,1,0, 0,0,0);
+	//pentachoronModel[4] = Tetrahedron(0,0,0,0, 0,0,0, 1,0,0,0, 0,2,0, 0,1,0,0, 0,0,2, 0,0,0,1, 2,0,0);
+
+	//Cell Color
+	pentachoronModel[0] = Tetrahedron(0,0,0,0, 0,0,0, 1,0,0,0, 0.01f,0,0, 0,1,0,0, 0,0.01f,0, 0,0,1,0, 0,0,0.01f);
+	pentachoronModel[1] = Tetrahedron(0,0,0,1, 1,0,0, 1,0,0,0, 0.99f,0,0, 0,1,0,0, 1,0.01f,0, 0,0,1,0, 1,0,0.01f);
+	pentachoronModel[2] = Tetrahedron(0,0,0,0, 0,1,0, 0,0,0,1, 0.01f,1,0, 0,1,0,0, 0,0.99f,0, 0,0,1,0, 0,1,0.01f);
+	pentachoronModel[3] = Tetrahedron(0,0,0,0, 1,1,0, 1,0,0,0, 0.99f,1,0, 0,0,0,1, 1,0.99f,0, 0,0,1,0, 1,1,0.01f);
+	pentachoronModel[4] = Tetrahedron(0,0,0,0, 0,0,1, 1,0,0,0, 0.01f,0,1, 0,1,0,0, 0,0.01f,1, 0,0,0,1, 0,0,0.99f);
 
 	Line modelLines[30];
 	for (int i = 0; i < 5; i++) 
@@ -146,6 +189,7 @@ unsigned int RenderManager::SetBuffer(Camera& camera, unsigned int VBOaddress)
 		return 0;
 	vertexPos.clear();
 	vertexCol.clear();
+	vertexTex.clear();
 #pragma region Kernel setup and launch
 	glm::mat4x4* modelMatrices = new glm::mat4x4[pentaSize];
 	glm::vec4* modelOffsets = new glm::vec4[pentaSize];
@@ -208,11 +252,12 @@ unsigned int RenderManager::SetBuffer(Camera& camera, unsigned int VBOaddress)
 			cl::Buffer tetraStateBuffer(crossSection.context, CL_MEM_HOST_READ_ONLY, sizeof(char)*tetraSize);
 			crossSection.SetVariable(1, 0, pointBuffer);
 			crossSection.SetVariable(1, 1, stateBuffer);
-			crossSection.SetVariable(1, 2, tetraStateBuffer);
+			crossSection.SetVariable(1, 2, texCoordBuffer);
+			crossSection.SetVariable(1, 3, tetraStateBuffer);
 			crossSection.LaunchKernel(1, 0, tetraSize);
 			crossSection.ReadKernel(1, pointBuffer, GL_TRUE, 0, sizeof(glm::vec4) * lineSize, points);
+			crossSection.ReadKernel(1, texCoordBuffer, GL_TRUE, 0, sizeof(glm::vec4) * lineSize, texCoords);
 			crossSection.ReadKernel(1, tetraStateBuffer, GL_TRUE, 0, sizeof(char)*tetraSize, tetraStates);
-			faceColor = 0;
 			for (int i = 0; i < tetraSize; i++)
 			{
 				if (tetraStates[i] >= 3)
@@ -220,51 +265,16 @@ unsigned int RenderManager::SetBuffer(Camera& camera, unsigned int VBOaddress)
 					int checkSize = tetraStates[i] - 2;
 					for (int t = 0; t < checkSize; t++)
 					{
-						switch (faceColor)
-						{
-						case 0:
-							vertexPos.push_back(points[(i * 6) + 0]);
-							vertexCol.push_back(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
-							vertexPos.push_back(points[(i * 6) + 1 + t]);
-							vertexCol.push_back(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
-							vertexPos.push_back(points[(i * 6) + 2 + t]);
-							vertexCol.push_back(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
-							break;
-						case 1:
-							vertexPos.push_back(points[(i * 6) + 0]);
-							vertexCol.push_back(glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
-							vertexPos.push_back(points[(i * 6) + 1 + t]);
-							vertexCol.push_back(glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
-							vertexPos.push_back(points[(i * 6) + 2 + t]);
-							vertexCol.push_back(glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
-							break;
-						case 2:
-							vertexPos.push_back(points[(i * 6) + 0]);
-							vertexCol.push_back(glm::vec4(0.0f, 1.0f, 0.0f, 1.0f));
-							vertexPos.push_back(points[(i * 6) + 1 + t]);
-							vertexCol.push_back(glm::vec4(0.0f, 1.0f, 0.0f, 1.0f));
-							vertexPos.push_back(points[(i * 6) + 2 + t]);
-							vertexCol.push_back(glm::vec4(0.0f, 1.0f, 0.0f, 1.0f));
-							break;
-						case 3:
-							vertexPos.push_back(points[(i * 6) + 0]);
-							vertexCol.push_back(glm::vec4(0.0f, 0.0f, 1.0f, 1.0f));
-							vertexPos.push_back(points[(i * 6) + 1 + t]);
-							vertexCol.push_back(glm::vec4(0.0f, 0.0f, 1.0f, 1.0f));
-							vertexPos.push_back(points[(i * 6) + 2 + t]);
-							vertexCol.push_back(glm::vec4(0.0f, 0.0f, 1.0f, 1.0f));
-							break;
-						case 4:
-							vertexPos.push_back(points[(i * 6) + 0]);
-							vertexCol.push_back(glm::vec4(1.0f, 1.0f, 0.0f, 1.0f));
-							vertexPos.push_back(points[(i * 6) + 1 + t]);
-							vertexCol.push_back(glm::vec4(1.0f, 1.0f, 0.0f, 1.0f));
-							vertexPos.push_back(points[(i * 6) + 2 + t]);
-							vertexCol.push_back(glm::vec4(1.0f, 1.0f, 0.0f, 1.0f));
-							break;
-						}
+						vertexPos.push_back(points[(i * 6) + 0]);
+						vertexCol.push_back(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
+						vertexTex.push_back(texCoords[(i * 6) + 0]);
+						vertexPos.push_back(points[(i * 6) + 1 + t]);
+						vertexCol.push_back(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
+						vertexTex.push_back(texCoords[(i * 6) + 1 + t]);
+						vertexPos.push_back(points[(i * 6) + 2 + t]);
+						vertexCol.push_back(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
+						vertexTex.push_back(texCoords[(i * 6) + 2 + t]);
 					}
-					faceColor = Modulo(faceColor + 1, 5);
 				}
 			} //7 ms
 			delete[] tetraStates;
@@ -274,9 +284,8 @@ unsigned int RenderManager::SetBuffer(Camera& camera, unsigned int VBOaddress)
 	else
 	{
 #pragma region Kernel tetrahedron return handler
-
-		faceColor = 0;
 		SmartArray<glm::vec4> vertexResults(6);
+		SmartArray<glm::vec3> textureResults(6);
 		vertexResults.count = 0;
 		for (int t = 0; t < tetraSize; t++)
 		{
@@ -286,32 +295,38 @@ unsigned int RenderManager::SetBuffer(Camera& camera, unsigned int VBOaddress)
 			int checkSize = 0;
 			if (states[(t * 6)] == 0)
 			{
-				vertexResults.data[checkSize] = points[(t * 6)];
+				vertexResults.data[checkSize] = points[(t * 6) + 0];
+				textureResults.data[checkSize] = texCoords[(t * 6) + 0];
 				checkSize++;
 			}
 			if (states[(t * 6) + 1] == 0)
 			{
 				vertexResults.data[checkSize] = points[(t * 6) + 1];
+				textureResults.data[checkSize] = texCoords[(t * 6) + 1];
 				checkSize++;
 			}
 			if (states[(t * 6) + 2] == 0)
 			{
 				vertexResults.data[checkSize] = points[(t * 6) + 2];
+				textureResults.data[checkSize] = texCoords[(t * 6) + 2];
 				checkSize++;
 			}
 			if (states[(t * 6) + 3] == 0)
 			{
 				vertexResults.data[checkSize] = points[(t * 6) + 3];
+				textureResults.data[checkSize] = texCoords[(t * 6) + 3];
 				checkSize++;
 			}
 			if (states[(t * 6) + 4] == 0)
 			{
 				vertexResults.data[checkSize] = points[(t * 6) + 4];
+				textureResults.data[checkSize] = texCoords[(t * 6) + 4];
 				checkSize++;
 			}
 			if (states[(t * 6) + 5] == 0)
 			{
 				vertexResults.data[checkSize] = points[(t * 6) + 5];
+				textureResults.data[checkSize] = texCoords[(t * 6) + 5];
 				checkSize++;
 			}
 			vertexResults.count = checkSize;
@@ -320,12 +335,12 @@ unsigned int RenderManager::SetBuffer(Camera& camera, unsigned int VBOaddress)
 
 			SmartArray<glm::vec4> planedVertices(checkSize);
 #pragma region To plane space
-			{ //This stuff is explained is some graph paper I worked on. You would need to see it to understand this.
+			{ //Basically, this section solves for the instersection of the parametric forms of a point and a plane, assuming the point is always on the plane.
 				glm::vec4 origin = vertexResults.data[0]; //i, j, k
 				glm::vec4 planeVec1 = vertexResults.data[1] - origin; // f, g, h
 				glm::vec4 planeVec2 = vertexResults.data[2] - origin; // m, n, o
 
-				float w = (planeVec2.x * planeVec1.y) - (planeVec2.y * planeVec1.x);
+				float w = (planeVec2.x * planeVec1.y) - (planeVec2.y * planeVec1.x); //These constants are the same for every possible point. They depend entirely on the plane in question.
 				float gdivw = planeVec1.y / w;
 				float fdivw = planeVec1.x / w;
 				float kdivh = -(origin.z / planeVec1.z);
@@ -371,6 +386,7 @@ unsigned int RenderManager::SetBuffer(Camera& camera, unsigned int VBOaddress)
 #pragma endregion
 			//Sort each side
 			SmartArray<glm::vec4> orderedVertices(checkSize);
+			SmartArray<glm::vec3> orderedTextures(checkSize);
 			orderedVertices.count = 0;
 			InsertSort(rightVertices);
 			InsertSort(leftVertices);
@@ -378,62 +394,29 @@ unsigned int RenderManager::SetBuffer(Camera& camera, unsigned int VBOaddress)
 			for (int i = 0; i < checkSize; i++)
 			{
 				orderedVertices.data[orderedVertices.count] = vertexResults.data[rightVertices.data[i].ID];
+				orderedTextures.data[orderedVertices.count] = textureResults.data[rightVertices.data[i].ID];
 				orderedVertices.count++;
 			}
 			checkSize = leftVertices.count;
 			for (int i = checkSize - 1; i >= 0; i--)
 			{
 				orderedVertices.data[orderedVertices.count] = vertexResults.data[leftVertices.data[i].ID];
+				orderedTextures.data[orderedVertices.count] = textureResults.data[leftVertices.data[i].ID];
 				orderedVertices.count++;
 			}
 			checkSize = orderedVertices.count - 2;
 			for (int i = 0; i < checkSize; i++)
 			{
-				switch (faceColor)
-				{
-				case 0:
-					vertexPos.push_back(orderedVertices.data[0]);
-					vertexCol.push_back(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
-					vertexPos.push_back(orderedVertices.data[i + 1]);
-					vertexCol.push_back(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
-					vertexPos.push_back(orderedVertices.data[i + 2]);
-					vertexCol.push_back(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
-					break;
-				case 1:
-					vertexPos.push_back(orderedVertices.data[0]);
-					vertexCol.push_back(glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
-					vertexPos.push_back(orderedVertices.data[i + 1]);
-					vertexCol.push_back(glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
-					vertexPos.push_back(orderedVertices.data[i + 2]);
-					vertexCol.push_back(glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
-					break;
-				case 2:
-					vertexPos.push_back(orderedVertices.data[0]);
-					vertexCol.push_back(glm::vec4(0.0f, 1.0f, 0.0f, 1.0f));
-					vertexPos.push_back(orderedVertices.data[i + 1]);
-					vertexCol.push_back(glm::vec4(0.0f, 1.0f, 0.0f, 1.0f));
-					vertexPos.push_back(orderedVertices.data[i + 2]);
-					vertexCol.push_back(glm::vec4(0.0f, 1.0f, 0.0f, 1.0f));
-					break;
-				case 3:
-					vertexPos.push_back(orderedVertices.data[0]);
-					vertexCol.push_back(glm::vec4(0.0f, 0.0f, 1.0f, 1.0f));
-					vertexPos.push_back(orderedVertices.data[i + 1]);
-					vertexCol.push_back(glm::vec4(0.0f, 0.0f, 1.0f, 1.0f));
-					vertexPos.push_back(orderedVertices.data[i + 2]);
-					vertexCol.push_back(glm::vec4(0.0f, 0.0f, 1.0f, 1.0f));
-					break;
-				case 4:
-					vertexPos.push_back(orderedVertices.data[0]);
-					vertexCol.push_back(glm::vec4(1.0f, 1.0f, 0.0f, 1.0f));
-					vertexPos.push_back(orderedVertices.data[i + 1]);
-					vertexCol.push_back(glm::vec4(1.0f, 1.0f, 0.0f, 1.0f));
-					vertexPos.push_back(orderedVertices.data[i + 2]);
-					vertexCol.push_back(glm::vec4(1.0f, 1.0f, 0.0f, 1.0f));
-					break;
-				}
+				vertexPos.push_back(orderedVertices.data[0]);
+				vertexCol.push_back(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
+				vertexTex.push_back(orderedTextures.data[0]);
+				vertexPos.push_back(orderedVertices.data[i + 1]);
+				vertexCol.push_back(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
+				vertexTex.push_back(orderedTextures.data[i + 1]);
+				vertexPos.push_back(orderedVertices.data[i + 2]);
+				vertexCol.push_back(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
+				vertexTex.push_back(orderedTextures.data[i + 2]);
 			}
-			faceColor = Modulo(faceColor + 1, 5);
 		}
 
 #pragma endregion
@@ -447,12 +430,12 @@ unsigned int RenderManager::SetBuffer(Camera& camera, unsigned int VBOaddress)
 		vboData[0 + (i * 9)] = vertexPos[i].x;
 		vboData[1 + (i * 9)] = vertexPos[i].y;
 		vboData[2 + (i * 9)] = vertexPos[i].z;
-		vboData[3 + (i * 9)] = 1;
-		vboData[4 + (i * 9)] = 1;
-		vboData[5 + (i * 9)] = 1;
-		vboData[6 + (i * 9)] = texCoords[i].x;
-		vboData[7 + (i * 9)] = texCoords[i].y;
-		vboData[8 + (i * 9)] = texCoords[i].z;
+		vboData[3 + (i * 9)] = vertexCol[i].x;
+		vboData[4 + (i * 9)] = vertexCol[i].y;
+		vboData[5 + (i * 9)] = vertexCol[i].z;
+		vboData[6 + (i * 9)] = vertexTex[i].x;
+		vboData[7 + (i * 9)] = vertexTex[i].y;
+		vboData[8 + (i * 9)] = vertexTex[i].z;
 	}
 	glBindBuffer(GL_ARRAY_BUFFER, VBOaddress);
 	glBufferData(GL_ARRAY_BUFFER, 9 * sizeof(float) * vertexPos.size(), vboData, GL_DYNAMIC_DRAW);
@@ -460,6 +443,7 @@ unsigned int RenderManager::SetBuffer(Camera& camera, unsigned int VBOaddress)
 	delete[] vboData;
 	delete[] points;
 	delete[] states;
+	delete[] texCoords;
 	return vertexPos.size(); // 14 ms
 }
 //Cube, 2D, old 3D

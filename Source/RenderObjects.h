@@ -51,9 +51,9 @@ class RenderManager
 	GPUProgram crossSection;
 	std::deque<glm::vec4> vertexPos;
 	std::deque<glm::vec3> vertexCol;
+	std::deque<glm::vec3> vertexTex;
 public:
 	bool renderMode;
-	int faceColor;
 	Tetrahedron pentachoronModel[5];
 	cl::Buffer modelBuffer;
 	std::vector<Renderable> pentaRenderables;

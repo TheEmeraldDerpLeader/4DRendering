@@ -38,21 +38,21 @@ float moveSpeed = 1.0f;
 float rotationSpeed = 45.0f;
 float deltaTime;
 
-//TODO: Add textures to VAO and texture coords to cross sectioning
+//TODO: Fix textures
 
 int main(){
 	glm::mat4x4 perspective = glm::perspective(45.0f, (float)screenx / (float)screeny, 0.1f, 100.0f);
 
-	camera.position = glm::vec4(0, 0, 3, 0.1f);
+	camera.position = glm::vec4(0, 0, 3, 0.0f);
 
 	//On start, kernel: 4ms, cpu: 3ms. With beeg wall, kernel: 10ms, cpu: 21ms
-	for (int x = 0; x < 2; x++)
+	for (int x = 0; x < 5; x++)
 	{
-		for (int y = 0; y < 2; y++)
+		for (int y = 0; y < 5; y++)
 		{
-			for (int w = 0; w < 2; w++)
+			for (int w = 0; w < 5; w++)
 			{
-				renderManager.pentaRenderables.push_back(Renderable(glm::mat4x4(1), glm::vec4(-0+ x,-0 + y,-3,-0 + w), 0));
+				renderManager.pentaRenderables.push_back(Renderable(glm::mat4x4(1), glm::vec4(-2+ x,-2 + y,-3,-2 + w), 0));
 			}
 		}
 	}
@@ -92,47 +92,168 @@ int main(){
 	glGenTextures(1, &texture);
 
 	glBindTexture(GL_TEXTURE_3D, texture);
-	unsigned char data[2][2][2][4];
-#pragma region Texture Data
-	data[0][0][0][0] = (unsigned char)255;
-	data[0][0][0][1] = (unsigned char)255;
-	data[0][0][0][2] = (unsigned char)255;
-	data[0][0][0][3] = (unsigned char)255;
-	data[0][0][1][0] = (unsigned char)255;
-	data[0][0][1][1] = (unsigned char)0;
-	data[0][0][1][2] = (unsigned char)0;
-	data[0][0][1][3] = (unsigned char)255;
-	data[0][1][0][0] = (unsigned char)0;
-	data[0][1][0][1] = (unsigned char)255;
-	data[0][1][0][2] = (unsigned char)0;
-	data[0][1][0][3] = (unsigned char)255;
-	data[0][1][1][0] = (unsigned char)255;
-	data[0][1][1][1] = (unsigned char)255;
-	data[0][1][1][2] = (unsigned char)255;
-	data[0][1][1][3] = (unsigned char)255;
-	data[1][0][0][0] = (unsigned char)0;
-	data[1][0][0][1] = (unsigned char)0;
-	data[1][0][0][2] = (unsigned char)255;
-	data[1][0][0][3] = (unsigned char)255;
-	data[1][0][1][0] = (unsigned char)255;
-	data[1][0][1][1] = (unsigned char)255;
-	data[1][0][1][2] = (unsigned char)255;
-	data[1][0][1][3] = (unsigned char)255;
-	data[1][1][0][0] = (unsigned char)255;
-	data[1][1][0][1] = (unsigned char)255;
-	data[1][1][0][2] = (unsigned char)255;
-	data[1][1][0][3] = (unsigned char)255;
-	data[1][1][1][0] = (unsigned char)255;
-	data[1][1][1][1] = (unsigned char)255;
-	data[1][1][1][2] = (unsigned char)255;
-	data[1][1][1][3] = (unsigned char)255;
-#pragma endregion
-	glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA, 2, 2, 2, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_BORDER);
+	
+	unsigned char* data = new unsigned char[128*128*128*4];
+	//Red Gradient
+	/*
+	{
+		int index = 0;
+		for (int z = 0; z < 128; z++)
+		{
+			for (int y = 0; y < 128; y++)
+			{
+				for (int x = 0; x < 128; x++)
+				{
+					data[(index * 4) + 0] = (unsigned char)(255);
+					data[(index * 4) + 1] = (unsigned char)(255-(x*2));
+					data[(index * 4) + 2] = (unsigned char)(255-(x*2));
+					data[(index * 4) + 3] = (unsigned char)(255);
+					index++;
+				}
+			}
+		}
+	}
+	*/
+	//Celestial Colors
+	
+	for (int z = 0; z < 128; z++)
+		{
+			for (int y = 0; y < 128; y++)
+			{
+				for (int x = 0; x < 128; x++)
+				{
+					data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 0] = (unsigned char)(255 - (x * 2));
+					data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 1] = (unsigned char)(255 - (y * 2));
+					data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 2] = (unsigned char)(255 - (z * 2));
+					data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 3] = (unsigned char)(255);
+			}
+		}
+	}
+	
+	//RGB Colors
+	/*
+	for (int z = 0; z < 128; z++)
+	{
+		for (int y = 0; y < 128; y++)
+		{
+			for (int x = 0; x < 128; x++)
+			{
+				data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 0] = (unsigned char)(255 - ((127-x) * 2));
+				data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 1] = (unsigned char)(255 - ((127-y) * 2));
+				data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 2] = (unsigned char)(255 - ((127-z) * 2));
+				data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 3] = (unsigned char)(255);
+			}
+		}
+	}
+	*/
+	//Uniform Checkers
+	/*
+	for (int z = 0; z < 128; z++)
+	{
+		for (int y = 0; y < 128; y++)
+		{
+			for (int x = 0; x < 128; x++)
+			{
+				if (Modulo(x, 16) > 8 || Modulo(y,16) > 8 || Modulo(z,16) > 8)
+				{
+					data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 0] = (unsigned char)(255);
+					data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 1] = (unsigned char)(0);
+					data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 2] = (unsigned char)(0);
+					data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 3] = (unsigned char)(255);
+				}
+				else
+				{
+					data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 0] = (unsigned char)(255);
+					data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 1] = (unsigned char)(255);
+					data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 2] = (unsigned char)(255);
+					data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 3] = (unsigned char)(255);
+				}
+			}
+		}
+	}
+	*/
+	/*#pragma region Texture Data
+	data[0] = (unsigned char)255;
+	data[1] = (unsigned char)255;
+	data[2] = (unsigned char)255;
+	data[3] = (unsigned char)255;
+	data[4] = (unsigned char)255;
+	data[5] = (unsigned char)0;
+	data[6] = (unsigned char)0;
+	data[7] = (unsigned char)255;
+	data[8] = (unsigned char)0;
+	data[9] = (unsigned char)255;
+	data[10] = (unsigned char)0;
+	data[11] = (unsigned char)255;
+	data[12] = (unsigned char)255;
+	data[13] = (unsigned char)255;
+	data[14] = (unsigned char)255;
+	data[15] = (unsigned char)255;
+	data[16] = (unsigned char)0;
+	data[17] = (unsigned char)0;
+	data[18] = (unsigned char)255;
+	data[19] = (unsigned char)255;
+	data[20] = (unsigned char)255;
+	data[21] = (unsigned char)255;
+	data[22] = (unsigned char)255;
+	data[23] = (unsigned char)255;
+	data[24] = (unsigned char)255;
+	data[25] = (unsigned char)255;
+	data[26] = (unsigned char)255;
+	data[27] = (unsigned char)255;
+	data[28] = (unsigned char)255;
+	data[29] = (unsigned char)255;
+	data[30] = (unsigned char)255;
+	data[31] = (unsigned char)255;
+#pragma endregion*/
+
+	//Ununiform Checkers
+	/*
+	for (int z = 0; z < 128; z++)
+	{
+		for (int y = 0; y < 128; y++)
+		{
+			for (int x = 0; x < 128; x++)
+			{
+				if (Modulo(x, 16) > 8)
+				{
+					data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 0] = (unsigned char)(255);
+					data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 1] = (unsigned char)(0);
+					data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 2] = (unsigned char)(0);
+					data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 3] = (unsigned char)(255);
+				}
+				else if (Modulo(y, 16) > 8)
+				{
+					data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 0] = (unsigned char)(0);
+					data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 1] = (unsigned char)(255);
+					data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 2] = (unsigned char)(0);
+					data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 3] = (unsigned char)(255);
+				}
+				else if (Modulo(z, 16) > 8)
+				{
+					data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 0] = (unsigned char)(0);
+					data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 1] = (unsigned char)(0);
+					data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 2] = (unsigned char)(255);
+					data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 3] = (unsigned char)(255);
+				}
+				else
+				{
+					data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 0] = (unsigned char)(255);
+					data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 1] = (unsigned char)(255);
+					data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 2] = (unsigned char)(255);
+					data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 3] = (unsigned char)(255);
+				}
+			}
+		}
+	}
+	*/
+	glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA, 128, 128, 128, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	delete data;
 
 	unsigned int perspectiveLoc = glGetUniformLocation(shader.ID, "perspectiveMat");
 	glUniformMatrix4fv(perspectiveLoc, 1, GL_FALSE, glm::value_ptr(perspective));
@@ -271,6 +392,10 @@ void ProcessInput(sf::Window* window)
 	{
 		moveSpeed = 2.0f;
 	}
+	else if (sf::Keyboard::isKeyPressed(sf::Keyboard::RShift))
+	{
+		moveSpeed = 0.5f;
+	}
 	else
 	{
 		moveSpeed = 1.0f;
@@ -309,8 +434,6 @@ void ProcessInput(sf::Window* window)
 	}
 	if (sf::Keyboard::isKeyPressed(sf::Keyboard::P))
 	{
-		std::cout << glGetError() << '\n';
-		abort();
 		if (renderManager.renderMode == false)
 			renderManager.renderMode = true;
 		else
