@@ -37,6 +37,7 @@ unsigned int VBO, VAO;
 float moveSpeed = 1.0f;
 float rotationSpeed = 45.0f;
 float deltaTime;
+float cursorLockWait = 0.0f;
 
 //TODO: Add support for multiple textures and models
 
@@ -468,11 +469,12 @@ void ProcessInput(sf::Window* window)
 	//Window input
 	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Escape))
 		window->close();
-	if (sf::Keyboard::isKeyPressed(sf::Keyboard::L))
+	if (sf::Keyboard::isKeyPressed(sf::Keyboard::L) && cursorLockWait == 0)
 	{
 		if (cursorLock)
 		{
 			cursorLock = false;
+			cursorLockWait = 0.5f;
 			window->setMouseCursorVisible(true);
 			window->setMouseCursorGrabbed(false);
 		}
@@ -480,86 +482,94 @@ void ProcessInput(sf::Window* window)
 		{
 			cursorLock = true;
 			firstMouse = true;
+			cursorLockWait = 0.5f;
 			window->setMouseCursorVisible(false);
 			window->setMouseCursorGrabbed(true);
 		}
 	}
-	//Movement Input
-	if (sf::Keyboard::isKeyPressed(sf::Keyboard::LShift))
+	if (cursorLock)
 	{
-		moveSpeed = 2.0f;
-	}
-	else if (sf::Keyboard::isKeyPressed(sf::Keyboard::RShift))
-	{
-		moveSpeed = 0.5f;
-	}
-	else
-	{
-		moveSpeed = 1.0f;
-	}
-	if (sf::Keyboard::isKeyPressed(sf::Keyboard::W))
-	{
-		camera.position += rotation * glm::vec4(0, 0, -deltaTime * moveSpeed, 0);
-	}
-	if (sf::Keyboard::isKeyPressed(sf::Keyboard::S))
-	{
-		camera.position += rotation * glm::vec4(0, 0, deltaTime * moveSpeed, 0);
-	}
-	if (sf::Keyboard::isKeyPressed(sf::Keyboard::D))
-	{
-		camera.position += rotation * glm::vec4(deltaTime * moveSpeed, 0, 0, 0);
-	}
-	if (sf::Keyboard::isKeyPressed(sf::Keyboard::A))
-	{
-		camera.position += rotation * glm::vec4(-deltaTime * moveSpeed, 0, 0, 0);
-	}
-	if (sf::Keyboard::isKeyPressed(sf::Keyboard::E))
-	{
-		camera.position += rotation * glm::vec4(0, deltaTime * moveSpeed, 0, 0);
-	}
-	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Q))
-	{
-		camera.position += rotation * glm::vec4(0, -deltaTime * moveSpeed, 0, 0);
-	}
-	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Num3))
-	{
-		camera.position += rotation * glm::vec4(0, 0, 0, deltaTime * moveSpeed);
-	}
-	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Num1))
-	{
-		camera.position += rotation * glm::vec4(0, 0, 0, -deltaTime * moveSpeed);
-	}
-	if (sf::Keyboard::isKeyPressed(sf::Keyboard::P))
-	{
-		if (renderManager.renderMode == false)
-			renderManager.renderMode = true;
+		//Movement Input
+		if (sf::Keyboard::isKeyPressed(sf::Keyboard::LShift))
+		{
+			moveSpeed = 2.0f;
+		}
+		else if (sf::Keyboard::isKeyPressed(sf::Keyboard::RShift))
+		{
+			moveSpeed = 0.5f;
+		}
 		else
-			renderManager.renderMode = false;
-	
-	}
-	//Mouse input
-	if (firstMouse) // this bool variable is initially set to true
-	{
-		sf::Mouse::setPosition(sf::Vector2i((window->getPosition().x + (screenx / 2)), (window->getPosition().y + (screeny / 2))));
-		firstMouse = false;
-	}
-	float xOffset = sf::Mouse::getPosition().x - (window->getPosition().x + (screenx / 2));
-	float yOffset = sf::Mouse::getPosition().y - (window->getPosition().y + (screeny / 2));
-	if (!cursorLock)
-		return;
+		{
+			moveSpeed = 1.0f;
+		}
+		if (sf::Keyboard::isKeyPressed(sf::Keyboard::W))
+		{
+			camera.position += rotation * glm::vec4(0, 0, -deltaTime * moveSpeed, 0);
+		}
+		if (sf::Keyboard::isKeyPressed(sf::Keyboard::S))
+		{
+			camera.position += rotation * glm::vec4(0, 0, deltaTime * moveSpeed, 0);
+		}
+		if (sf::Keyboard::isKeyPressed(sf::Keyboard::D))
+		{
+			camera.position += rotation * glm::vec4(deltaTime * moveSpeed, 0, 0, 0);
+		}
+		if (sf::Keyboard::isKeyPressed(sf::Keyboard::A))
+		{
+			camera.position += rotation * glm::vec4(-deltaTime * moveSpeed, 0, 0, 0);
+		}
+		if (sf::Keyboard::isKeyPressed(sf::Keyboard::E))
+		{
+			camera.position += rotation * glm::vec4(0, deltaTime * moveSpeed, 0, 0);
+		}
+		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Q))
+		{
+			camera.position += rotation * glm::vec4(0, -deltaTime * moveSpeed, 0, 0);
+		}
+		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Num3))
+		{
+			camera.position += rotation * glm::vec4(0, 0, 0, deltaTime * moveSpeed);
+		}
+		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Num1))
+		{
+			camera.position += rotation * glm::vec4(0, 0, 0, -deltaTime * moveSpeed);
+		}
+		if (sf::Keyboard::isKeyPressed(sf::Keyboard::P))
+		{
+			if (renderManager.renderMode == false)
+				renderManager.renderMode = true;
+			else
+				renderManager.renderMode = false;
 
-	float sensitivity = 0.25f;
-	xOffset *= sensitivity;
-	yOffset *= -sensitivity;
-	if (!sf::Keyboard::isKeyPressed(sf::Keyboard::LControl))
-	{
-		camera.RotateZX(-xOffset * deltaTime * rotationSpeed);
-		camera.RotateYZ(yOffset * deltaTime * rotationSpeed);
+		}
+		//Mouse input
+		if (firstMouse) // this bool variable is initially set to true
+		{
+			sf::Mouse::setPosition(sf::Vector2i((window->getPosition().x + (screenx / 2)), (window->getPosition().y + (screeny / 2))));
+			firstMouse = false;
+		}
+		float xOffset = sf::Mouse::getPosition().x - (window->getPosition().x + (screenx / 2));
+		float yOffset = sf::Mouse::getPosition().y - (window->getPosition().y + (screeny / 2));
+
+		float sensitivity = 0.25f;
+		xOffset *= sensitivity;
+		yOffset *= -sensitivity;
+		if (!sf::Keyboard::isKeyPressed(sf::Keyboard::LControl))
+		{
+			camera.RotateZX(-xOffset * deltaTime * rotationSpeed);
+			camera.RotateYZ(yOffset * deltaTime * rotationSpeed);
+		}
+		else
+		{
+			camera.RotateXW(xOffset * deltaTime * rotationSpeed);
+			camera.RotateZW(yOffset * deltaTime * rotationSpeed);
+		}
+		sf::Mouse::setPosition(sf::Vector2i((window->getPosition().x + (screenx / 2)), (window->getPosition().y + (screeny / 2))));
 	}
-	else
+	if (cursorLockWait != 0)
 	{
-		camera.RotateXW(xOffset * deltaTime * rotationSpeed);
-		camera.RotateZW(yOffset * deltaTime * rotationSpeed);
+		cursorLockWait -= deltaTime;
+		if (cursorLockWait < 0)
+			cursorLockWait = 0;
 	}
-	sf::Mouse::setPosition(sf::Vector2i((window->getPosition().x + (screenx / 2)), (window->getPosition().y + (screeny / 2))));
 }
