@@ -141,21 +141,21 @@ RenderManager::RenderManager()
 	//pentachoronModel[3] = Tetrahedron(0,0,0,0, 1,1,1, 1,0,0,0, 1,0,0, 0,0,0,1, 0,1,0, 0,0,1,0, 0,0,1);
 	//pentachoronModel[4] = Tetrahedron(0,0,0,0, 1,1,1, 1,0,0,0, 1,0,0, 0,1,0,0, 0,1,0, 0,0,0,1, 0,0,1);
 
-	//Checkers
+	//Stripes
 	//pentachoronModel[0] = Tetrahedron(0,0,0,0, 0,0,0, 1,0,0,0, 0,1,0, 0,1,0,0, 0,0,1, 0,0,1,0, 0,0,0);
 	//pentachoronModel[1] = Tetrahedron(0,0,0,1, 1,0,0, 1,0,0,0, 0,1,0, 0,1,0,0, 0,0,1, 0,0,1,0, 0,0,0);
 	//pentachoronModel[2] = Tetrahedron(0,0,0,0, 0,1,0, 0,0,0,1, 1,0,0, 0,1,0,0, 0,0,1, 0,0,1,0, 0,0,0);
 	//pentachoronModel[3] = Tetrahedron(0,0,0,0, 0,0,1, 1,0,0,0, 0,1,0, 0,0,0,1, 1,0,0, 0,0,1,0, 0,0,0);
 	//pentachoronModel[4] = Tetrahedron(0,0,0,0, 0,0,0, 1,0,0,0, 0,1,0, 0,1,0,0, 0,0,1, 0,0,0,1, 1,0,0);
 
-	//0.5 Checkers
+	//0.5 Stripes
 	//pentachoronModel[0] = Tetrahedron(0,0,0,0, 0,0,0, 1,0,0,0, 0,0.5f,0, 0,1,0,0, 0,0,0.5f, 0,0,1,0, 0,0,0);
 	//pentachoronModel[1] = Tetrahedron(0,0,0,1, 0.5f,0,0, 1,0,0,0, 0,0.5f,0, 0,1,0,0, 0,0,0.5f, 0,0,1,0, 0,0,0);
 	//pentachoronModel[2] = Tetrahedron(0,0,0,0, 0,0.5f,0, 0,0,0,1, 0.5f,0,0, 0,1,0,0, 0,0,0.5f, 0,0,1,0, 0,0,0);
 	//pentachoronModel[3] = Tetrahedron(0,0,0,0, 0,0,0.5f, 1,0,0,0, 0,0.5f,0, 0,0,0,1, 0.5f,0,0, 0,0,1,0, 0,0,0);
 	//pentachoronModel[4] = Tetrahedron(0,0,0,0, 0,0,0, 1,0,0,0, 0,0.5f,0, 0,1,0,0, 0,0,0.5f, 0,0,0,1, 0.5f,0,0);
 
-	//2 Checkers
+	//2 Stripes
 	//pentachoronModel[0] = Tetrahedron(0,0,0,0, 0,0,0, 1,0,0,0, 0,2,0, 0,1,0,0, 0,0,2, 0,0,1,0, 0,0,0);
 	//pentachoronModel[1] = Tetrahedron(0,0,0,1, 2,0,0, 1,0,0,0, 0,2,0, 0,1,0,0, 0,0,2, 0,0,1,0, 0,0,0);
 	//pentachoronModel[2] = Tetrahedron(0,0,0,0, 0,2,0, 0,0,0,1, 2,0,0, 0,1,0,0, 0,0,2, 0,0,1,0, 0,0,0);
@@ -163,11 +163,11 @@ RenderManager::RenderManager()
 	//pentachoronModel[4] = Tetrahedron(0,0,0,0, 0,0,0, 1,0,0,0, 0,2,0, 0,1,0,0, 0,0,2, 0,0,0,1, 2,0,0);
 
 	//Cell Color
-	pentachoronModel[0] = Tetrahedron(0,0,0,0, 0,0,0, 1,0,0,0, 0.01f,0,0, 0,1,0,0, 0,0.01f,0, 0,0,1,0, 0,0,0.01f);
-	pentachoronModel[1] = Tetrahedron(0,0,0,1, 1,0,0, 1,0,0,0, 0.99f,0,0, 0,1,0,0, 1,0.01f,0, 0,0,1,0, 1,0,0.01f);
-	pentachoronModel[2] = Tetrahedron(0,0,0,0, 0,1,0, 0,0,0,1, 0.01f,1,0, 0,1,0,0, 0,0.99f,0, 0,0,1,0, 0,1,0.01f);
-	pentachoronModel[3] = Tetrahedron(0,0,0,0, 1,1,0, 1,0,0,0, 0.99f,1,0, 0,0,0,1, 1,0.99f,0, 0,0,1,0, 1,1,0.01f);
-	pentachoronModel[4] = Tetrahedron(0,0,0,0, 0,0,1, 1,0,0,0, 0.01f,0,1, 0,1,0,0, 0,0.01f,1, 0,0,0,1, 0,0,0.99f);
+	pentachoronModel[0] = Tetrahedron(0,0,0,0, 1/7.0f,0,0, 1,0,0,0, 1/7.0f,0,0, 0,1,0,0, 1/7.0f,0,0, 0,0,1,0, 1/7.0f,0,0);
+	pentachoronModel[1] = Tetrahedron(0,0,0,1, 2/7.0f,0,0, 1,0,0,0, 2/7.0f,0,0, 0,1,0,0, 2/7.0f,0,0, 0,0,1,0, 2/7.0f,0,0);
+	pentachoronModel[2] = Tetrahedron(0,0,0,0, 4/7.0f,0,0, 0,0,0,1, 4/7.0f,0,0, 0,1,0,0, 4/7.0f,0,0, 0,0,1,0, 4/7.0f,0,0);
+	pentachoronModel[3] = Tetrahedron(0,0,0,0, 3/7.0f,0,0, 1,0,0,0, 3/7.0f,0,0, 0,0,0,1, 3/7.0f,0,0, 0,0,1,0, 3/7.0f,0,0);
+	pentachoronModel[4] = Tetrahedron(0,0,0,0, 5/7.0f,0,0, 1,0,0,0, 5/7.0f,0,0, 0,1,0,0, 5/7.0f,0,0, 0,0,0,1, 5/7.0f,0,0);
 
 	Line modelLines[30];
 	for (int i = 0; i < 5; i++) 

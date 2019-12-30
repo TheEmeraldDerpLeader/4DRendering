@@ -38,7 +38,9 @@ float moveSpeed = 1.0f;
 float rotationSpeed = 45.0f;
 float deltaTime;
 
-//TODO: Fix textures
+//TODO: Add support for multiple textures and models
+
+//Later: readd model-less render start and octachoron renderer
 
 int main(){
 	glm::mat4x4 perspective = glm::perspective(45.0f, (float)screenx / (float)screeny, 0.1f, 100.0f);
@@ -94,7 +96,7 @@ int main(){
 	glBindTexture(GL_TEXTURE_3D, texture);
 	
 	unsigned char* data = new unsigned char[128*128*128*4];
-	//Red Gradient
+	//Red Gradient 128
 	/*
 	{
 		int index = 0;
@@ -114,8 +116,8 @@ int main(){
 		}
 	}
 	*/
-	//Celestial Colors
-	
+	//Celestial Colors 128
+	/*
 	for (int z = 0; z < 128; z++)
 		{
 			for (int y = 0; y < 128; y++)
@@ -129,8 +131,8 @@ int main(){
 			}
 		}
 	}
-	
-	//RGB Colors
+	*/
+	//RGB Colors 128
 	/*
 	for (int z = 0; z < 128; z++)
 	{
@@ -146,7 +148,7 @@ int main(){
 		}
 	}
 	*/
-	//Uniform Checkers
+	//Uniform Stripes 128
 	/*
 	for (int z = 0; z < 128; z++)
 	{
@@ -172,6 +174,7 @@ int main(){
 		}
 	}
 	*/
+	//Legacy 2
 	/*#pragma region Texture Data
 	data[0] = (unsigned char)255;
 	data[1] = (unsigned char)255;
@@ -206,8 +209,7 @@ int main(){
 	data[30] = (unsigned char)255;
 	data[31] = (unsigned char)255;
 #pragma endregion*/
-
-	//Ununiform Checkers
+	//Ununiform Stripes 128
 	/*
 	for (int z = 0; z < 128; z++)
 	{
@@ -247,7 +249,102 @@ int main(){
 		}
 	}
 	*/
-	glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA, 128, 128, 128, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+	//Checkers 128
+	/*
+	for (int z = 0; z < 16; z++)
+	{
+		for (int y = 0; y < 16; y++)
+		{
+			for (int x = 0; x < 16; x++)
+			{
+				if (Modulo(Modulo(x, 2) + Modulo(y,2) + Modulo(z,2),2) == 1)
+				{
+					for (int px = 0; px < 8; px++)
+					{
+						for (int py = 0; py < 8; py++)
+						{
+							for (int pz = 0; pz < 8; pz++)
+							{
+								int gx = (x * 8) + px;
+								int gy = (y * 8) + py;
+								int gz = (z * 8) + pz;
+								data[(((gz*(128 * 128)) + (gy * 128) + gx) * 4) + 0] = (unsigned char)(255);
+								data[(((gz*(128 * 128)) + (gy * 128) + gx) * 4) + 1] = (unsigned char)(0);
+								data[(((gz*(128 * 128)) + (gy * 128) + gx) * 4) + 2] = (unsigned char)(0);
+								data[(((gz*(128 * 128)) + (gy * 128) + gx) * 4) + 3] = (unsigned char)(255);
+							}
+						}
+					}
+				}
+				else
+				{
+					for (int px = 0; px < 8; px++)
+					{
+						for (int py = 0; py < 8; py++)
+						{
+							for (int pz = 0; pz < 8; pz++)
+							{
+								int gx = (x * 8) + px;
+								int gy = (y * 8) + py;
+								int gz = (z * 8) + pz;
+								data[(((gz*(128 * 128)) + (gy * 128) + gx) * 4) + 0] = (unsigned char)(255);
+								data[(((gz*(128 * 128)) + (gy * 128) + gx) * 4) + 1] = (unsigned char)(255);
+								data[(((gz*(128 * 128)) + (gy * 128) + gx) * 4) + 2] = (unsigned char)(255);
+								data[(((gz*(128 * 128)) + (gy * 128) + gx) * 4) + 3] = (unsigned char)(255);
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	*/
+	//Color Lines 8
+	for (int x = 0; x < 8; x++)
+	{
+		for (int y = 0; y < 8; y++)
+		{
+			for (int z = 0; z < 8; z++)
+			{
+				data[(((z*(64)) + (y * 8) + x) * 4) + 0] = (unsigned char)(0);
+				data[(((z*(64)) + (y * 8) + x) * 4) + 1] = (unsigned char)(0);
+				data[(((z*(64)) + (y * 8) + x) * 4) + 2] = (unsigned char)(0);
+				data[(((z*(64)) + (y * 8) + x) * 4) + 3] = (unsigned char)(255);
+				switch (x)
+				{
+				case 0:
+					break;
+				case 1:
+					data[(((z*(64)) + (y * 8) + x) * 4) + 0] = (unsigned char)(255);
+					break;
+				case 2:
+					data[(((z*(64)) + (y * 8) + x) * 4) + 1] = (unsigned char)(255);
+					break;
+				case 3:
+					data[(((z*(64)) + (y * 8) + x) * 4) + 0] = (unsigned char)(255);
+					data[(((z*(64)) + (y * 8) + x) * 4) + 1] = (unsigned char)(255);
+					break;
+				case 4:
+					data[(((z*(64)) + (y * 8) + x) * 4) + 2] = (unsigned char)(255);
+					break;
+				case 5:
+					data[(((z*(64)) + (y * 8) + x) * 4) + 0] = (unsigned char)(255);
+					data[(((z*(64)) + (y * 8) + x) * 4) + 2] = (unsigned char)(255);
+					break;
+				case 6:
+					data[(((z*(64)) + (y * 8) + x) * 4) + 1] = (unsigned char)(255);
+					data[(((z*(64)) + (y * 8) + x) * 4) + 2] = (unsigned char)(255);
+					break;
+				case 7:
+					data[(((z*(64)) + (y * 8) + x) * 4) + 0] = (unsigned char)(255);
+					data[(((z*(64)) + (y * 8) + x) * 4) + 1] = (unsigned char)(255);
+					data[(((z*(64)) + (y * 8) + x) * 4) + 2] = (unsigned char)(255);
+					break;
+				}
+			}
+		}
+	}
+	glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA, 8, 8, 8, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_REPEAT);
