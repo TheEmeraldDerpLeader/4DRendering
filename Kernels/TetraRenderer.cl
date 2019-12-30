@@ -4,39 +4,46 @@ typedef struct
 	float value;
 } SortItem;
 
-__kernel void MakeFace(__global float4* points, __global char* inStates, __global char* outStates)
+__kernel void MakeFace(__global float4* points, __global char* inStates, __global float4* texCoords, __global char* outStates)
 {
 	int thisID = get_global_id(0);
 	float4 posVec[6];
+	float4 texVec[6];
 	int checkSize = 0;
 	if (inStates[(thisID*6) + 0] == 0)
 	{
 		posVec[checkSize] = points[(thisID*6) + 0];
+		texVec[checkSize] = texCoords[(thisID*6) + 0];
 		checkSize++;
 	}
 	if (inStates[(thisID*6) + 1] == 0)
 	{
 		posVec[checkSize] = points[(thisID*6) + 1];
+		texVec[checkSize] = texCoords[(thisID*6) + 1];
 		checkSize++;
 	}
 	if (inStates[(thisID*6) + 2] == 0)
 	{
 		posVec[checkSize] = points[(thisID*6) + 2];
+		texVec[checkSize] = texCoords[(thisID*6) + 2];
 		checkSize++;
 	}
 	if (inStates[(thisID*6) + 3] == 0)
 	{
 		posVec[checkSize] = points[(thisID*6) + 3];
+		texVec[checkSize] = texCoords[(thisID*6) + 3];
 		checkSize++;
 	}
 	if (inStates[(thisID*6) + 4] == 0)
 	{
 		posVec[checkSize] = points[(thisID*6) + 4];
+		texVec[checkSize] = texCoords[(thisID*6) + 4];
 		checkSize++;
 	}
 	if (inStates[(thisID*6) + 5] == 0)
 	{
 		posVec[checkSize] = points[(thisID*6) + 5];
+		texVec[checkSize] = texCoords[(thisID*6) + 5];
 		checkSize++;
 	}
 	if (checkSize < 3){
@@ -58,7 +65,7 @@ __kernel void MakeFace(__global float4* points, __global char* inStates, __globa
 		float4* vertex; 
 		for (int i = 0; i < checkSize; i++)
 		{
-			vertex = posVec + i; //CHECK  THIS-------------------
+			vertex = posVec + i;
 			float b = (gdivw*(vertex->x - origin.x)) - (fdivw*(vertex->y - origin.y));
 			planedVertices[i] = (float2)((vertex->z / planeVec1.z) + kdivh - (odivh*b), b); //The x coordinate is called "a"	
 		}
@@ -158,12 +165,14 @@ __kernel void MakeFace(__global float4* points, __global char* inStates, __globa
 	for (int i = 0; i < checkSize; i++)
 	{
 		points[(thisID * 6) + ocount] = posVec[rightVertices[i].id];
+		texCoords[(thisID * 6) + ocount] = texVec[rightVertices[i].id];
 		ocount++;
 	}
 	checkSize = lcount;
 	for (int i = checkSize - 1; i >= 0; i--)
 	{
 		points[(thisID * 6) + ocount] = posVec[leftVertices[i].id];
+		texCoords[(thisID * 6) + ocount] = texVec[leftVertices[i].id];
 		ocount++;
 	}
 }
