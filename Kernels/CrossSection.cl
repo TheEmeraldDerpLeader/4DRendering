@@ -15,7 +15,12 @@ typedef struct
 	float3 texDirection; //alignment 4
 } Line;
 
-__kernel void CrossSection(__global Mat4* modelMatrices, __global float4* modelOffsets, //1 per penta
+// Work item for each tetra, but they share model matrices and offsets
+// Tetras use modelID to get matrix and offset. Tetras use tetraID to get their lines
+// Model lines is premade
+// 6 lines per tetra are made and crosected to each be put into their own work items.
+
+__kernel void CrossSection(__global Mat4* modelMatrices, __global float4* modelOffsets, //1 per model
 	__global int* modelIDs, __global int* tetraIDs, //1 per tetra
 	__global float4* outPoints, __global char* outStates, __global float3* outTexCoords, //6 per tetra
 	__constant Mat4* cameraMatrix, __constant float4* cameraOffset, //1
