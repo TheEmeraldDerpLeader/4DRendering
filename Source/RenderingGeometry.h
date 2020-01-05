@@ -8,6 +8,7 @@
 #include "Modulo.h"
 
 #include <vector>
+#include <iostream>
 
 struct Line
 {
@@ -24,6 +25,9 @@ struct Line
 	void Rotate(float, float, float, float, float, float);
 	void Transform(glm::mat4x4);
 	void TransformAround(glm::mat4x4, glm::vec4);
+
+	Line operator+(glm::vec4);
+	Line operator-(glm::vec4);
 };
 
 struct Tetrahedron
@@ -31,11 +35,15 @@ struct Tetrahedron
 	Line lines[6];
 
 	Tetrahedron();
+	Tetrahedron(Line, Line, Line, Line, Line, Line);
 	Tetrahedron(glm::vec4, glm::vec3, glm::vec4, glm::vec3, glm::vec4, glm::vec3, glm::vec4, glm::vec3);
 	Tetrahedron(float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float);
 
 	void Translate(float, float, float, float);
 };
+
+void PrismifyByVec(Line, Line, Line, glm::vec4, std::vector<Tetrahedron>&);
+void PrismifyByTri();
 
 /*
 struct Cube

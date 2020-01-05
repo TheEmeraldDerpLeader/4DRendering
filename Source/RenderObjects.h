@@ -14,6 +14,17 @@
 #include <vector>
 #include <deque>
 
+class Texture
+{
+public:
+	unsigned int id;
+	bool usesAlpha;
+	Texture();
+	Texture(int idInt, bool usesAlphaBool) : id(idInt), usesAlpha(usesAlphaBool) {}
+
+	void BindTexture(int);
+};
+
 class Camera
 {
 public:
@@ -41,25 +52,24 @@ public:
 	glm::mat4x4 transformation;
 	glm::vec4 offset;
 	int modelID;
+	int textureID;
+	int tetraCount;
 
 	Renderable();
-	Renderable(glm::mat4x4, glm::vec4, int);
+	Renderable(glm::mat4x4, glm::vec4, int, int, int);
 };
 
 class RenderManager
 {
 	GPUProgram crossSection;
-	std::deque<glm::vec4> vertexPos;
-	std::deque<glm::vec3> vertexCol;
-	std::deque<glm::vec3> vertexTex;
 public:
-	bool renderMode;
-	Tetrahedron pentachoronModel[5];
+	std::vector<Tetrahedron> models;
+	std::vector<unsigned int> modelStarts;
 	cl::Buffer modelBuffer;
-	std::vector<Renderable> pentaRenderables;
+	std::deque<Renderable> renderables;
 
 	RenderManager();
 
-	unsigned int SetBuffer(Camera&, unsigned int);
+	void SetBuffer(Camera&, unsigned int*, int, unsigned int*);
 
 };

@@ -17,6 +17,7 @@
 #include <vector>
 #include <deque>
 
+void CreateTexture(int, unsigned char*, unsigned int, unsigned int, unsigned int, Texture&);
 void ProcessInput(sf::Window*);
 
 char vertexShader[] = "Assets\\Shaders\\VertexShader.glsl";
@@ -31,42 +32,38 @@ RenderManager renderManager;
 glm::vec2 lastMouse(screenx / 2, screeny / 2);
 bool firstMouse = true;
 bool cursorLock = true;
+bool terminated = false;
 
-unsigned int VBO, VAO;
+const unsigned int textureCount = 3;
+unsigned int VBO[textureCount];
+unsigned int VAO[textureCount];
+unsigned int errorCode;
 
 float moveSpeed = 1.0f;
 float rotationSpeed = 45.0f;
 float deltaTime;
 float cursorLockWait = 0.0f;
 
-//TODO: Add support for multiple textures and models
+Texture textures[textureCount];
 
-//Later: readd model-less render start and octachoron renderer
+//TODO: Create dynamic tetra model system. Seperate the strict penta functionality from the kernel. Probably have a var for tetras in one model
+
+//Later: readd model-less render start and octachoron renderer. Point lighting system
 
 int main(){
 	glm::mat4x4 perspective = glm::perspective(45.0f, (float)screenx / (float)screeny, 0.1f, 100.0f);
 
 	camera.position = glm::vec4(0, 0, 3, 0.0f);
 
-	//On start, kernel: 4ms, cpu: 3ms. With beeg wall, kernel: 10ms, cpu: 21ms
-	for (int x = 0; x < 5; x++)
-	{
-		for (int y = 0; y < 5; y++)
-		{
-			for (int w = 0; w < 5; w++)
-			{
-				renderManager.pentaRenderables.push_back(Renderable(glm::mat4x4(1), glm::vec4(-2+ x,-2 + y,-3,-2 + w), 0));
-			}
-		}
-	}
+	renderManager.renderables.push_back(Renderable(glm::mat4x4(1), glm::vec4(0, 0, 0, 0), 0, 0, 5));
+	renderManager.renderables.push_back(Renderable(glm::mat4x4(1), glm::vec4(2, 0, 0, 0), 1, 1, 5));
+	renderManager.renderables.push_back(Renderable(glm::mat4x4(1), glm::vec4(-5, 0, 0, -0.5f), 1, 2, 5));
 
 	sf::ContextSettings settings;
 	settings.majorVersion = 3;
 	settings.minorVersion = 3;
 	settings.depthBits = 24;
 	sf::RenderWindow window(sf::VideoMode(screenx,screeny), "4D Rendering", sf::Style::Default, settings);
-	sf::CircleShape shape(100.f);
-	shape.setFillColor(sf::Color::Green);
 	//window.setVerticalSyncEnabled(true);
 	glewInit();
 
@@ -78,280 +75,26 @@ int main(){
 
 	Shader shader(vertexShader, fragmentShader);
 	shader.use();
-	glGenBuffers(1, &VBO);
-	glGenVertexArrays(1, &VAO);
+	glGenBuffers(textureCount, VBO);
+	glGenVertexArrays(textureCount, VAO);
 
 	unsigned int stride = sizeof(float)*9;
-	glBindVertexArray(VAO);
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride, (void*)0); //Position
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, stride, (void*)(3*sizeof(float))); //Color
-	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, stride, (void*)(6 * sizeof(float))); //Texture coords
-	glEnableVertexAttribArray(2);
 
-	unsigned int texture;
-	glGenTextures(1, &texture);
+	for (int i = 0; i < textureCount; i++)
+	{
+		glBindVertexArray(VAO[i]);
+		glBindBuffer(GL_ARRAY_BUFFER, VBO[i]);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride, (void*)0); //Position
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, stride, (void*)(3 * sizeof(float))); //Color
+		glEnableVertexAttribArray(1);
+		glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, stride, (void*)(6 * sizeof(float))); //Texture coords
+		glEnableVertexAttribArray(2);
+	}
 
-	glBindTexture(GL_TEXTURE_3D, texture);
-	
-	unsigned char* data = new unsigned char[128*128*128*4];
-	//Red Gradient 128
-	/*
-	{
-		int index = 0;
-		for (int z = 0; z < 128; z++)
-		{
-			for (int y = 0; y < 128; y++)
-			{
-				for (int x = 0; x < 128; x++)
-				{
-					data[(index * 4) + 0] = (unsigned char)(255);
-					data[(index * 4) + 1] = (unsigned char)(255-(x*2));
-					data[(index * 4) + 2] = (unsigned char)(255-(x*2));
-					data[(index * 4) + 3] = (unsigned char)(255);
-					index++;
-				}
-			}
-		}
-	}
-	*/
-	//Celestial Colors 128
-	/*
-	for (int z = 0; z < 128; z++)
-		{
-			for (int y = 0; y < 128; y++)
-			{
-				for (int x = 0; x < 128; x++)
-				{
-					data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 0] = (unsigned char)(255 - (x * 2));
-					data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 1] = (unsigned char)(255 - (y * 2));
-					data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 2] = (unsigned char)(255 - (z * 2));
-					data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 3] = (unsigned char)(255);
-			}
-		}
-	}
-	*/
-	//RGB Colors 128
-	/*
-	for (int z = 0; z < 128; z++)
-	{
-		for (int y = 0; y < 128; y++)
-		{
-			for (int x = 0; x < 128; x++)
-			{
-				data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 0] = (unsigned char)(255 - ((127-x) * 2));
-				data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 1] = (unsigned char)(255 - ((127-y) * 2));
-				data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 2] = (unsigned char)(255 - ((127-z) * 2));
-				data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 3] = (unsigned char)(255);
-			}
-		}
-	}
-	*/
-	//Uniform Stripes 128
-	/*
-	for (int z = 0; z < 128; z++)
-	{
-		for (int y = 0; y < 128; y++)
-		{
-			for (int x = 0; x < 128; x++)
-			{
-				if (Modulo(x, 16) > 8 || Modulo(y,16) > 8 || Modulo(z,16) > 8)
-				{
-					data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 0] = (unsigned char)(255);
-					data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 1] = (unsigned char)(0);
-					data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 2] = (unsigned char)(0);
-					data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 3] = (unsigned char)(255);
-				}
-				else
-				{
-					data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 0] = (unsigned char)(255);
-					data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 1] = (unsigned char)(255);
-					data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 2] = (unsigned char)(255);
-					data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 3] = (unsigned char)(255);
-				}
-			}
-		}
-	}
-	*/
-	//Legacy 2
-	/*#pragma region Texture Data
-	data[0] = (unsigned char)255;
-	data[1] = (unsigned char)255;
-	data[2] = (unsigned char)255;
-	data[3] = (unsigned char)255;
-	data[4] = (unsigned char)255;
-	data[5] = (unsigned char)0;
-	data[6] = (unsigned char)0;
-	data[7] = (unsigned char)255;
-	data[8] = (unsigned char)0;
-	data[9] = (unsigned char)255;
-	data[10] = (unsigned char)0;
-	data[11] = (unsigned char)255;
-	data[12] = (unsigned char)255;
-	data[13] = (unsigned char)255;
-	data[14] = (unsigned char)255;
-	data[15] = (unsigned char)255;
-	data[16] = (unsigned char)0;
-	data[17] = (unsigned char)0;
-	data[18] = (unsigned char)255;
-	data[19] = (unsigned char)255;
-	data[20] = (unsigned char)255;
-	data[21] = (unsigned char)255;
-	data[22] = (unsigned char)255;
-	data[23] = (unsigned char)255;
-	data[24] = (unsigned char)255;
-	data[25] = (unsigned char)255;
-	data[26] = (unsigned char)255;
-	data[27] = (unsigned char)255;
-	data[28] = (unsigned char)255;
-	data[29] = (unsigned char)255;
-	data[30] = (unsigned char)255;
-	data[31] = (unsigned char)255;
-#pragma endregion*/
-	//Ununiform Stripes 128
-	/*
-	for (int z = 0; z < 128; z++)
-	{
-		for (int y = 0; y < 128; y++)
-		{
-			for (int x = 0; x < 128; x++)
-			{
-				if (Modulo(x, 16) > 8)
-				{
-					data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 0] = (unsigned char)(255);
-					data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 1] = (unsigned char)(0);
-					data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 2] = (unsigned char)(0);
-					data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 3] = (unsigned char)(255);
-				}
-				else if (Modulo(y, 16) > 8)
-				{
-					data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 0] = (unsigned char)(0);
-					data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 1] = (unsigned char)(255);
-					data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 2] = (unsigned char)(0);
-					data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 3] = (unsigned char)(255);
-				}
-				else if (Modulo(z, 16) > 8)
-				{
-					data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 0] = (unsigned char)(0);
-					data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 1] = (unsigned char)(0);
-					data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 2] = (unsigned char)(255);
-					data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 3] = (unsigned char)(255);
-				}
-				else
-				{
-					data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 0] = (unsigned char)(255);
-					data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 1] = (unsigned char)(255);
-					data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 2] = (unsigned char)(255);
-					data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 3] = (unsigned char)(255);
-				}
-			}
-		}
-	}
-	*/
-	//Checkers 128
-	/*
-	for (int z = 0; z < 16; z++)
-	{
-		for (int y = 0; y < 16; y++)
-		{
-			for (int x = 0; x < 16; x++)
-			{
-				if (Modulo(Modulo(x, 2) + Modulo(y,2) + Modulo(z,2),2) == 1)
-				{
-					for (int px = 0; px < 8; px++)
-					{
-						for (int py = 0; py < 8; py++)
-						{
-							for (int pz = 0; pz < 8; pz++)
-							{
-								int gx = (x * 8) + px;
-								int gy = (y * 8) + py;
-								int gz = (z * 8) + pz;
-								data[(((gz*(128 * 128)) + (gy * 128) + gx) * 4) + 0] = (unsigned char)(255);
-								data[(((gz*(128 * 128)) + (gy * 128) + gx) * 4) + 1] = (unsigned char)(0);
-								data[(((gz*(128 * 128)) + (gy * 128) + gx) * 4) + 2] = (unsigned char)(0);
-								data[(((gz*(128 * 128)) + (gy * 128) + gx) * 4) + 3] = (unsigned char)(255);
-							}
-						}
-					}
-				}
-				else
-				{
-					for (int px = 0; px < 8; px++)
-					{
-						for (int py = 0; py < 8; py++)
-						{
-							for (int pz = 0; pz < 8; pz++)
-							{
-								int gx = (x * 8) + px;
-								int gy = (y * 8) + py;
-								int gz = (z * 8) + pz;
-								data[(((gz*(128 * 128)) + (gy * 128) + gx) * 4) + 0] = (unsigned char)(255);
-								data[(((gz*(128 * 128)) + (gy * 128) + gx) * 4) + 1] = (unsigned char)(255);
-								data[(((gz*(128 * 128)) + (gy * 128) + gx) * 4) + 2] = (unsigned char)(255);
-								data[(((gz*(128 * 128)) + (gy * 128) + gx) * 4) + 3] = (unsigned char)(255);
-							}
-						}
-					}
-				}
-			}
-		}
-	}
-	*/
-	//Color Lines 8
-	for (int x = 0; x < 8; x++)
-	{
-		for (int y = 0; y < 8; y++)
-		{
-			for (int z = 0; z < 8; z++)
-			{
-				data[(((z*(64)) + (y * 8) + x) * 4) + 0] = (unsigned char)(0);
-				data[(((z*(64)) + (y * 8) + x) * 4) + 1] = (unsigned char)(0);
-				data[(((z*(64)) + (y * 8) + x) * 4) + 2] = (unsigned char)(0);
-				data[(((z*(64)) + (y * 8) + x) * 4) + 3] = (unsigned char)(255);
-				switch (x)
-				{
-				case 0:
-					break;
-				case 1:
-					data[(((z*(64)) + (y * 8) + x) * 4) + 0] = (unsigned char)(255);
-					break;
-				case 2:
-					data[(((z*(64)) + (y * 8) + x) * 4) + 1] = (unsigned char)(255);
-					break;
-				case 3:
-					data[(((z*(64)) + (y * 8) + x) * 4) + 0] = (unsigned char)(255);
-					data[(((z*(64)) + (y * 8) + x) * 4) + 1] = (unsigned char)(255);
-					break;
-				case 4:
-					data[(((z*(64)) + (y * 8) + x) * 4) + 2] = (unsigned char)(255);
-					break;
-				case 5:
-					data[(((z*(64)) + (y * 8) + x) * 4) + 0] = (unsigned char)(255);
-					data[(((z*(64)) + (y * 8) + x) * 4) + 2] = (unsigned char)(255);
-					break;
-				case 6:
-					data[(((z*(64)) + (y * 8) + x) * 4) + 1] = (unsigned char)(255);
-					data[(((z*(64)) + (y * 8) + x) * 4) + 2] = (unsigned char)(255);
-					break;
-				case 7:
-					data[(((z*(64)) + (y * 8) + x) * 4) + 0] = (unsigned char)(255);
-					data[(((z*(64)) + (y * 8) + x) * 4) + 1] = (unsigned char)(255);
-					data[(((z*(64)) + (y * 8) + x) * 4) + 2] = (unsigned char)(255);
-					break;
-				}
-			}
-		}
-	}
-	glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA, 8, 8, 8, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	delete data;
+	CreateTexture(6, nullptr, 8, 8, 8, textures[0]);
+	CreateTexture(1, nullptr, 128, 128, 128, textures[1]);
+	CreateTexture(4, nullptr, 128, 128, 128, textures[2]);
 
 	unsigned int perspectiveLoc = glGetUniformLocation(shader.ID, "perspectiveMat");
 	glUniformMatrix4fv(perspectiveLoc, 1, GL_FALSE, glm::value_ptr(perspective));
@@ -396,6 +139,14 @@ int main(){
 	rotationZWText.setPosition(5, screeny - 37);
 #pragma endregion
 
+	errorCode = glGetError();
+	if (errorCode != 0)
+	{
+		std::cout << errorCode << '\n';
+		abort();
+	}
+
+	unsigned int bufferSizes[textureCount];
 	sf::Clock frameTime;
 	while (window.isOpen())
 	{
@@ -405,6 +156,7 @@ int main(){
 			// "close requested" event: we close the window
 			if (event.type == sf::Event::Closed)
 			{
+				terminated = true;
 				window.close();
 			}
 			else if (event.type == sf::Event::Resized)
@@ -419,48 +171,345 @@ int main(){
 		frameTime.restart();
 		window.setActive(true);
 		ProcessInput(&window);
-		window.clear(sf::Color((0.2f * 255),(0.3f * 255),(0.3f * 255), 255));
-		glClear(GL_DEPTH_BUFFER_BIT);
+		if (!terminated)
+		{
+			window.clear(sf::Color((0.2f * 255), (0.3f * 255), (0.3f * 255), 255));
+			glClear(GL_DEPTH_BUFFER_BIT);
 
-		shader.use();
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_3D, texture);
-		glBindVertexArray(VAO);
-		glBindBuffer(GL_ARRAY_BUFFER, VBO);
-		
-		int vertexNumber = renderManager.SetBuffer(camera, VBO);
-		glDrawArrays(GL_TRIANGLES, 0, vertexNumber);
+			shader.use();
+			glActiveTexture(GL_TEXTURE0);
 
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
-		glBindVertexArray(0);
-		glUseProgram(0);
+			renderManager.SetBuffer(camera, VBO, textureCount, bufferSizes);
+			errorCode = glGetError();
+			for (int i = 0; i < textureCount; i++)
+			{
+				glBindVertexArray(VAO[i]);
+				glBindBuffer(GL_ARRAY_BUFFER, VBO[i]);
+				textures[i].BindTexture(0);
+				glDrawArrays(GL_TRIANGLES, 0, bufferSizes[i]);
+				glGetError();
+			}
+			glBindBuffer(GL_ARRAY_BUFFER, 0);
+			glBindVertexArray(0);
+			glUseProgram(0);
+			errorCode = glGetError();
+			if (errorCode != 0)
+			{
+				std::cout << errorCode << '\n';
+				abort();
+			}
 
-		window.pushGLStates();
-		positionXText.setString("X: " + std::to_string(camera.position.x));
-		positionYText.setString("Y: " + std::to_string(camera.position.y));
-		positionZText.setString("Z: " + std::to_string(camera.position.z));
-		positionWText.setString("W: " + std::to_string(camera.position.w));
-		rotationYZText.setString("YZ: " + std::to_string(camera.rotation[1]));
-		rotationZXText.setString("ZX: " + std::to_string(camera.rotation[2]));
-		rotationXWText.setString("XW: " + std::to_string(camera.rotation[3]));
-		rotationZWText.setString("ZW: " + std::to_string(camera.rotation[5]));
-		window.draw(positionXText);
-		window.draw(positionYText);
-		window.draw(positionZText);
-		window.draw(positionWText);
-		window.draw(rotationYZText);
-		window.draw(rotationZXText);
-		window.draw(rotationXWText);
-		window.draw(rotationZWText);
-		window.popGLStates();
+			window.pushGLStates();
+			positionXText.setString("X: " + std::to_string(camera.position.x));
+			positionYText.setString("Y: " + std::to_string(camera.position.y));
+			positionZText.setString("Z: " + std::to_string(camera.position.z));
+			positionWText.setString("W: " + std::to_string(camera.position.w));
+			rotationYZText.setString("YZ: " + std::to_string(camera.rotation[1]));
+			rotationZXText.setString("ZX: " + std::to_string(camera.rotation[2]));
+			rotationXWText.setString("XW: " + std::to_string(camera.rotation[3]));
+			rotationZWText.setString("ZW: " + std::to_string(camera.rotation[5]));
+			window.draw(positionXText);
+			window.draw(positionYText);
+			window.draw(positionZText);
+			window.draw(positionWText);
+			window.draw(rotationYZText);
+			window.draw(rotationZXText);
+			window.draw(rotationXWText);
+			window.draw(rotationZWText);
+			window.popGLStates();
 
-		window.display();
+			window.display();
+		}
 		window.setActive(false);
 	}
 
-	glDeleteVertexArrays(1, &VAO);
-	glDeleteBuffers(1, &VBO);
+	glDeleteVertexArrays(textureCount, VAO);
+	glDeleteBuffers(textureCount, VBO);
 	return 0;
+}
+
+void CreateTexture(int presetNumber, unsigned char* data, unsigned int xDim, unsigned int yDim, unsigned int zDim, Texture& texture)
+{
+	unsigned int texP;
+	glGenTextures(1, &texP);
+	texture.id = texP;
+	texture.usesAlpha = false;
+	glBindTexture(GL_TEXTURE_3D, texP);
+	bool initData = false;
+	if (data == nullptr)
+	{
+		initData = true;
+		data = new unsigned char[xDim * yDim * zDim * 4];
+	}
+	switch (presetNumber)
+	{
+	case 0:
+#pragma region RedGradient128
+		for (int z = 0; z < 128; z++)
+		{
+			for (int y = 0; y < 128; y++)
+			{
+				for (int x = 0; x < 128; x++)
+				{
+					data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 0] = (unsigned char)(255);
+					data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 1] = (unsigned char)(255 - (x * 2));
+					data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 2] = (unsigned char)(255 - (x * 2));
+					data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 3] = (unsigned char)(255);
+				}
+			}
+		}
+#pragma endregion
+		break;
+	case 1:
+#pragma region Celestial128
+		for (int z = 0; z < 128; z++)
+		{
+			for (int y = 0; y < 128; y++)
+			{
+				for (int x = 0; x < 128; x++)
+				{
+					data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 0] = (unsigned char)(255 - (x * 2));
+					data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 1] = (unsigned char)(255 - (y * 2));
+					data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 2] = (unsigned char)(255 - (z * 2));
+					data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 3] = (unsigned char)(255);
+				}
+			}
+		}
+#pragma endregion
+		break;
+	case 2:
+#pragma region RGBColors128
+		for (int z = 0; z < 128; z++)
+		{
+			for (int y = 0; y < 128; y++)
+			{
+				for (int x = 0; x < 128; x++)
+				{
+					data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 0] = (unsigned char)(255 - ((127 - x) * 2));
+					data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 1] = (unsigned char)(255 - ((127 - y) * 2));
+					data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 2] = (unsigned char)(255 - ((127 - z) * 2));
+					data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 3] = (unsigned char)(255);
+				}
+			}
+		}
+#pragma endregion
+		break;
+	case 3:
+#pragma region UniformStripes128
+		for (int z = 0; z < 128; z++)
+		{
+			for (int y = 0; y < 128; y++)
+			{
+				for (int x = 0; x < 128; x++)
+				{
+					if (Modulo(x, 16) > 8 || Modulo(y, 16) > 8 || Modulo(z, 16) > 8)
+					{
+						data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 0] = (unsigned char)(255);
+						data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 1] = (unsigned char)(0);
+						data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 2] = (unsigned char)(0);
+						data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 3] = (unsigned char)(255);
+					}
+					else
+					{
+						data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 0] = (unsigned char)(255);
+						data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 1] = (unsigned char)(255);
+						data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 2] = (unsigned char)(255);
+						data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 3] = (unsigned char)(255);
+					}
+				}
+			}
+		}
+#pragma endregion
+		break;
+	case -1:
+#pragma region Legacy2
+		data[0] = (unsigned char)255;
+		data[1] = (unsigned char)255;
+		data[2] = (unsigned char)255;
+		data[3] = (unsigned char)255;
+		data[4] = (unsigned char)255;
+		data[5] = (unsigned char)0;
+		data[6] = (unsigned char)0;
+		data[7] = (unsigned char)255;
+		data[8] = (unsigned char)0;
+		data[9] = (unsigned char)255;
+		data[10] = (unsigned char)0;
+		data[11] = (unsigned char)255;
+		data[12] = (unsigned char)255;
+		data[13] = (unsigned char)255;
+		data[14] = (unsigned char)255;
+		data[15] = (unsigned char)255;
+		data[16] = (unsigned char)0;
+		data[17] = (unsigned char)0;
+		data[18] = (unsigned char)255;
+		data[19] = (unsigned char)255;
+		data[20] = (unsigned char)255;
+		data[21] = (unsigned char)255;
+		data[22] = (unsigned char)255;
+		data[23] = (unsigned char)255;
+		data[24] = (unsigned char)255;
+		data[25] = (unsigned char)255;
+		data[26] = (unsigned char)255;
+		data[27] = (unsigned char)255;
+		data[28] = (unsigned char)255;
+		data[29] = (unsigned char)255;
+		data[30] = (unsigned char)255;
+		data[31] = (unsigned char)255;
+#pragma endregion
+		break;
+	case 4:
+#pragma region UnuniformStripes128
+		for (int z = 0; z < 128; z++)
+		{
+			for (int y = 0; y < 128; y++)
+			{
+				for (int x = 0; x < 128; x++)
+				{
+					if (Modulo(x, 16) > 8)
+					{
+						data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 0] = (unsigned char)(255);
+						data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 1] = (unsigned char)(0);
+						data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 2] = (unsigned char)(0);
+						data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 3] = (unsigned char)(255);
+					}
+					else if (Modulo(y, 16) > 8)
+					{
+						data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 0] = (unsigned char)(0);
+						data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 1] = (unsigned char)(255);
+						data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 2] = (unsigned char)(0);
+						data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 3] = (unsigned char)(255);
+					}
+					else if (Modulo(z, 16) > 8)
+					{
+						data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 0] = (unsigned char)(0);
+						data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 1] = (unsigned char)(0);
+						data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 2] = (unsigned char)(255);
+						data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 3] = (unsigned char)(255);
+					}
+					else
+					{
+						data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 0] = (unsigned char)(255);
+						data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 1] = (unsigned char)(255);
+						data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 2] = (unsigned char)(255);
+						data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 3] = (unsigned char)(255);
+					}
+				}
+			}
+		}
+#pragma endregion
+		break;
+	case 5:
+#pragma region Checkers128
+		for (int z = 0; z < 16; z++)
+		{
+			for (int y = 0; y < 16; y++)
+			{
+				for (int x = 0; x < 16; x++)
+				{
+					if (Modulo(Modulo(x, 2) + Modulo(y, 2) + Modulo(z, 2), 2) == 1)
+					{
+						for (int px = 0; px < 8; px++)
+						{
+							for (int py = 0; py < 8; py++)
+							{
+								for (int pz = 0; pz < 8; pz++)
+								{
+									int gx = (x * 8) + px;
+									int gy = (y * 8) + py;
+									int gz = (z * 8) + pz;
+									data[(((gz*(128 * 128)) + (gy * 128) + gx) * 4) + 0] = (unsigned char)(255);
+									data[(((gz*(128 * 128)) + (gy * 128) + gx) * 4) + 1] = (unsigned char)(0);
+									data[(((gz*(128 * 128)) + (gy * 128) + gx) * 4) + 2] = (unsigned char)(0);
+									data[(((gz*(128 * 128)) + (gy * 128) + gx) * 4) + 3] = (unsigned char)(255);
+								}
+							}
+						}
+					}
+					else
+					{
+						for (int px = 0; px < 8; px++)
+						{
+							for (int py = 0; py < 8; py++)
+							{
+								for (int pz = 0; pz < 8; pz++)
+								{
+									int gx = (x * 8) + px;
+									int gy = (y * 8) + py;
+									int gz = (z * 8) + pz;
+									data[(((gz*(128 * 128)) + (gy * 128) + gx) * 4) + 0] = (unsigned char)(255);
+									data[(((gz*(128 * 128)) + (gy * 128) + gx) * 4) + 1] = (unsigned char)(255);
+									data[(((gz*(128 * 128)) + (gy * 128) + gx) * 4) + 2] = (unsigned char)(255);
+									data[(((gz*(128 * 128)) + (gy * 128) + gx) * 4) + 3] = (unsigned char)(255);
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+#pragma endregion
+		break;
+	case 6:
+#pragma region ColorLines8
+		for (int x = 0; x < 8; x++)
+		{
+			for (int y = 0; y < 8; y++)
+			{
+				for (int z = 0; z < 8; z++)
+				{
+					data[(((z*(64)) + (y * 8) + x) * 4) + 0] = (unsigned char)0;
+					data[(((z*(64)) + (y * 8) + x) * 4) + 1] = (unsigned char)(0);
+					data[(((z*(64)) + (y * 8) + x) * 4) + 2] = (unsigned char)(0);
+					data[(((z*(64)) + (y * 8) + x) * 4) + 3] = (unsigned char)(255);
+					switch (x)
+					{
+					case 0:
+						break;
+					case 1:
+						data[(((z*(64)) + (y * 8) + x) * 4) + 0] = (unsigned char)(255);
+						break;
+					case 2:
+						data[(((z*(64)) + (y * 8) + x) * 4) + 1] = (unsigned char)(255);
+						break;
+					case 3:
+						data[(((z*(64)) + (y * 8) + x) * 4) + 0] = (unsigned char)(255);
+						data[(((z*(64)) + (y * 8) + x) * 4) + 1] = (unsigned char)(255);
+						break;
+					case 4:
+						data[(((z*(64)) + (y * 8) + x) * 4) + 2] = (unsigned char)(255);
+						break;
+					case 5:
+						data[(((z*(64)) + (y * 8) + x) * 4) + 0] = (unsigned char)(255);
+						data[(((z*(64)) + (y * 8) + x) * 4) + 2] = (unsigned char)(255);
+						break;
+					case 6:
+						data[(((z*(64)) + (y * 8) + x) * 4) + 1] = (unsigned char)(255);
+						data[(((z*(64)) + (y * 8) + x) * 4) + 2] = (unsigned char)(255);
+						break;
+					case 7:
+						data[(((z*(64)) + (y * 8) + x) * 4) + 0] = (unsigned char)(255);
+						data[(((z*(64)) + (y * 8) + x) * 4) + 1] = (unsigned char)(255);
+						data[(((z*(64)) + (y * 8) + x) * 4) + 2] = (unsigned char)(255);
+						break;
+					}
+				}
+			}
+		}
+#pragma endregion
+		break;
+	default:
+		std::cout << "Invalid preset number\n";
+		abort();
+		break;
+	}
+	glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA, xDim, yDim, zDim, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	if (initData)
+		delete data;
 }
 
 void ProcessInput(sf::Window* window)
@@ -468,7 +517,10 @@ void ProcessInput(sf::Window* window)
 	glm::mat4x4 rotation = glm::inverse(camera.GetTransform());
 	//Window input
 	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Escape))
+	{
+		terminated = true;
 		window->close();
+	}
 	if (sf::Keyboard::isKeyPressed(sf::Keyboard::L) && cursorLockWait == 0)
 	{
 		if (cursorLock)
@@ -534,14 +586,7 @@ void ProcessInput(sf::Window* window)
 		{
 			camera.position += rotation * glm::vec4(0, 0, 0, -deltaTime * moveSpeed);
 		}
-		if (sf::Keyboard::isKeyPressed(sf::Keyboard::P))
-		{
-			if (renderManager.renderMode == false)
-				renderManager.renderMode = true;
-			else
-				renderManager.renderMode = false;
 
-		}
 		//Mouse input
 		if (firstMouse) // this bool variable is initially set to true
 		{
