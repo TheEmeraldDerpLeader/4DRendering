@@ -18,16 +18,21 @@ struct Line
 	glm::vec4 textureDirection;
 
 	Line();
+	Line(glm::vec4, glm::vec3);
 	Line(glm::vec4, glm::vec4, glm::vec3, glm::vec3);
+	Line(float, float, float, float, float, float, float);
 	Line(float, float, float, float, float, float, float, float, float, float, float, float, float, float);
+	Line(Line, Line);
 
 	void Translate(float, float, float, float);
 	void Rotate(float, float, float, float, float, float);
 	void Transform(glm::mat4x4);
 	void TransformAround(glm::mat4x4, glm::vec4);
+	void Invert();
 
 	Line operator+(glm::vec4);
 	Line operator-(glm::vec4);
+	bool operator==(Line&);
 };
 
 struct Tetrahedron
@@ -40,9 +45,11 @@ struct Tetrahedron
 	Tetrahedron(float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float);
 
 	void Translate(float, float, float, float);
+
+	bool operator==(Tetrahedron&);
 };
 
-void PrismifyByVec(Line, Line, Line, glm::vec4, std::vector<Tetrahedron>&);
+void PrismifyByVec(Line, Line, Line, glm::vec4, glm::vec3, std::vector<Tetrahedron>&);
 void PrismifyByTri();
 
 /*

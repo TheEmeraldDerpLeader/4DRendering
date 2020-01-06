@@ -57,7 +57,7 @@ int main(){
 
 	renderManager.renderables.push_back(Renderable(glm::mat4x4(1), glm::vec4(0, 0, 0, 0), 0, 0, 5));
 	renderManager.renderables.push_back(Renderable(glm::mat4x4(1), glm::vec4(2, 0, 0, 0), 1, 1, 5));
-	renderManager.renderables.push_back(Renderable(glm::mat4x4(1), glm::vec4(-5, 0, 0, -0.5f), 1, 2, 5));
+	renderManager.renderables.push_back(Renderable(glm::mat4x4(1), glm::vec4(-5, 0, 0, -0.5f), 2, 2, 14));
 
 	sf::ContextSettings settings;
 	settings.majorVersion = 3;
@@ -94,7 +94,7 @@ int main(){
 
 	CreateTexture(6, nullptr, 8, 8, 8, textures[0]);
 	CreateTexture(1, nullptr, 128, 128, 128, textures[1]);
-	CreateTexture(4, nullptr, 128, 128, 128, textures[2]);
+	CreateTexture(2, nullptr, 128, 128, 128, textures[2]);
 
 	unsigned int perspectiveLoc = glGetUniformLocation(shader.ID, "perspectiveMat");
 	glUniformMatrix4fv(perspectiveLoc, 1, GL_FALSE, glm::value_ptr(perspective));

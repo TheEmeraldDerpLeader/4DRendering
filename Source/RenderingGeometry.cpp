@@ -1,32 +1,34 @@
 #include "RenderingGeometry.h"
 
-//1 goes to 2, 2 goes to 3, 3 goes to 1
 //Not optimized, but that doesn't really matter for this. It better shows how the algorithm works
-void PrismifyByVec(Line line1, Line line2, Line line3, glm::vec4 dirVec, std::vector<Tetrahedron>& outTetra)
+void PrismifyByVec(Line point1, Line point2, Line point3, glm::vec4 dirVec, glm::vec3 texVec, std::vector<Tetrahedron>& outTetra)
 {
 	Line holdLines[6];
 	glm::vec4 holdPoint[3];
-	holdLines[0] = line1;
-	holdLines[1] = line2;
-	holdLines[2] = line3;
+	if (outTetra.size() < 3)
+	{
+		std::cout << "Error in Prismify(): vector is " << outTetra.size() << '\n';
+		abort();
+	}
+	holdLines[0] = Line(point1,point2);
+	holdLines[1] = Line(point2, point3);
+	holdLines[2] = Line(point3, point1);
 	holdLines[3] = holdLines[0];
 	holdLines[4] = holdLines[1];
 	holdLines[5] = holdLines[2];
-	holdPoint[0] = line1.point + dirVec;
-	holdPoint[1] = line2.point + dirVec;
-	holdPoint[2] = line3.point + dirVec;
-	if (outTetra.size() != 3)
-	{
-		std::cout << "Error in Prismify(): vector is " << outTetra.size() <<'\n';
-		abort();
-	}
+	holdPoint[0] = holdLines[0].point + dirVec;
+	holdPoint[1] = holdLines[1].point + dirVec;
+	holdPoint[2] = holdLines[2].point + dirVec;
+
 	holdLines[3].direction = (holdPoint[2] - holdLines[0].point);
 	holdLines[4].direction = (holdPoint[2] - holdLines[1].point);
 	holdLines[5].direction = dirVec;
-	holdLines[3].textureDirection = (holdLines[2].textureCoords - holdLines[0].textureCoords);
-	holdLines[4].textureDirection = (holdLines[2].textureCoords - holdLines[1].textureCoords);
-	holdLines[5].textureDirection = glm::vec4(0);
+	holdLines[3].textureDirection = (holdLines[2].textureCoords - holdLines[0].textureCoords) + glm::vec4(texVec, 0);
+	holdLines[4].textureDirection = (holdLines[2].textureCoords - holdLines[1].textureCoords) + glm::vec4(texVec, 0);
+	holdLines[5].textureDirection = glm::vec4(texVec, 0);
 	outTetra[0] = Tetrahedron(holdLines[0], holdLines[1], holdLines[2], holdLines[3], holdLines[4], holdLines[5]);
+	
+	holdLines[3].Invert();
 	holdLines[1] = holdLines[4];
 	holdLines[2] = holdLines[3];
 	holdLines[3] = holdLines[0];
@@ -36,10 +38,12 @@ void PrismifyByVec(Line line1, Line line2, Line line3, glm::vec4 dirVec, std::ve
 	holdLines[3].direction = (holdPoint[1] - holdLines[0].point);
 	holdLines[4].direction = dirVec;
 	holdLines[5].direction = (holdPoint[1] - holdLines[2].point);
-	holdLines[3].textureDirection = (holdLines[1].textureCoords - holdLines[0].textureCoords);
-	holdLines[4].textureDirection = glm::vec4(0);
-	holdLines[5].textureDirection = (holdLines[1].textureCoords - holdLines[2].textureCoords);
-	outTetra[0] = Tetrahedron(holdLines[0], holdLines[1], holdLines[2], holdLines[3], holdLines[4], holdLines[5]);
+	holdLines[3].textureDirection = (holdLines[1].textureCoords - holdLines[0].textureCoords)+ glm::vec4(texVec, 0);
+	holdLines[4].textureDirection = glm::vec4(texVec, 0);
+	holdLines[5].textureDirection = (holdLines[1].textureCoords - holdLines[2].textureCoords)+ glm::vec4(texVec, 0);
+	outTetra[1] = Tetrahedron(holdLines[0], holdLines[1], holdLines[2], holdLines[3], holdLines[4], holdLines[5]);
+
+	holdLines[5].Invert();
 	holdLines[0] = holdLines[3];
 	holdLines[1] = holdLines[5];
 	holdLines[3] = holdLines[0];
@@ -49,10 +53,10 @@ void PrismifyByVec(Line line1, Line line2, Line line3, glm::vec4 dirVec, std::ve
 	holdLines[3].direction = dirVec;
 	holdLines[4].direction = (holdPoint[0] - holdLines[1].point);
 	holdLines[5].direction = (holdPoint[0] - holdLines[2].point);
-	holdLines[3].textureDirection = glm::vec4(0);
-	holdLines[4].textureDirection = (holdLines[0].textureCoords - holdLines[1].textureCoords);
-	holdLines[5].textureDirection = (holdLines[0].textureCoords - holdLines[2].textureCoords);
-	outTetra[0] = Tetrahedron(holdLines[0], holdLines[1], holdLines[2], holdLines[3], holdLines[4], holdLines[5]);
+	holdLines[3].textureDirection = glm::vec4(texVec, 0);
+	holdLines[4].textureDirection = (holdLines[0].textureCoords - holdLines[1].textureCoords)+ glm::vec4(texVec, 0);
+	holdLines[5].textureDirection = (holdLines[0].textureCoords - holdLines[2].textureCoords)+ glm::vec4(texVec, 0);
+	outTetra[2] = Tetrahedron(holdLines[0], holdLines[1], holdLines[2], holdLines[3], holdLines[4], holdLines[5]);
 }
 
 //Line
@@ -63,7 +67,13 @@ Line::Line()
 	textureCoords = glm::vec4(0, 0, 0, 0);
 	textureDirection = glm::vec4(0, 0, 0, 0);
 }
-
+Line::Line(glm::vec4 pointVec, glm::vec3 textureCoordsVec)
+{
+	point = pointVec;
+	direction = glm::vec4(0);
+	textureCoords = glm::vec4(textureCoordsVec, 0);
+	textureDirection = glm::vec4(0);
+}
 Line::Line(glm::vec4 pointVec, glm::vec4 directionVec, glm::vec3 textureCoordsVec, glm::vec3 textureDirectionVec)
 {
 	point = pointVec;
@@ -71,7 +81,13 @@ Line::Line(glm::vec4 pointVec, glm::vec4 directionVec, glm::vec3 textureCoordsVe
 	textureCoords = glm::vec4(textureCoordsVec,0);
 	textureDirection = glm::vec4(textureDirectionVec,0);
 }
-
+Line::Line(float xPos, float yPos, float zPos, float wPos, float xTPos, float yTPos, float zTPos)
+{
+	point = glm::vec4(xPos, yPos, zPos, wPos);
+	direction = glm::vec4(0);
+	textureCoords = glm::vec4(xTPos, yTPos, zTPos, 0);
+	textureDirection = glm::vec4(0);
+}
 Line::Line(float xPos, float yPos, float zPos, float wPos, float xDir, float yDir, float zDir, float wDir, float xTPos, float yTPos, float zTPos, float xTDir, float yTDir, float zTDir)
 {
 	point = glm::vec4(xPos, yPos, zPos, wPos);
@@ -79,6 +95,14 @@ Line::Line(float xPos, float yPos, float zPos, float wPos, float xDir, float yDi
 	textureCoords = glm::vec4(xTPos, yTPos, zTPos,0);
 	textureDirection = glm::vec4(xTDir, yTDir, zTDir,0);
 }
+Line::Line(Line point1, Line point2)
+{
+	point = point1.point;
+	textureCoords = point1.textureCoords;
+	direction = point2.point - point1.point;
+	textureDirection = point2.textureCoords - point1.textureCoords;
+}
+
 void Line::Translate(float x, float y, float z, float w)
 {
 	point.x += x;
@@ -114,6 +138,13 @@ void Line::TransformAround(glm::mat4x4 matrix, glm::vec4 pivot)
 	direction = matrix * direction;
 	point += pivot;
 }
+void Line::Invert()
+{
+	this->point = this->point + this->direction;
+	this->direction *= -1;
+	this->textureCoords = this->textureCoords + this->textureDirection;
+	this->textureDirection *= -1;
+}
 
 Line Line::operator+(glm::vec4 vector)
 {
@@ -122,6 +153,10 @@ Line Line::operator+(glm::vec4 vector)
 Line Line::operator-(glm::vec4 vector)
 {
 	return Line(this->point - vector, this->direction, this->textureCoords, this->textureDirection);
+}
+bool Line::operator==(Line& l)
+{
+	return (this->point == l.point && this->direction == l.direction);
 }
 //Tetrahedron
 Tetrahedron::Tetrahedron()
@@ -173,6 +208,19 @@ void Tetrahedron::Translate(float x, float y, float z, float w)
 	lines[5].Translate(x, y, z, w);
 }
 
+bool Tetrahedron::operator==(Tetrahedron& t)
+{
+	int checkCount = 0;
+	for (int i = 0; i < 6; i++)
+	{
+		for (int i2 = 0; i2 < 6; i2++)
+		{
+			if (this->lines[i] == t.lines[i2])
+				checkCount++;
+		}
+	}
+	return (checkCount > 5);
+}
 /*
 //Cube
 Cube::Cube()

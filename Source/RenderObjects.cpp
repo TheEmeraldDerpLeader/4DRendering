@@ -189,7 +189,7 @@ RenderManager::RenderManager()
 	crossSection.SetFunction(0, "CrossSection");
 	crossSection.CreateProgram("Assets\\Kernels\\TetraRenderer.cl");
 	crossSection.SetFunction(1, "MakeFace");
-	models.resize(22);
+	models.resize(24);
 	modelStarts.resize(3);
 	//Red Gradient
 	//pentachoronModel[0] = Tetrahedron(0,0,0,0, 0,0,0, 1,0,0,0, 0,0,0, 0,1,0,0, 0,0,0, 0,0,1,0, 0,0,0); 
@@ -241,23 +241,26 @@ RenderManager::RenderManager()
 	models[4] = Tetrahedron(0,0,0,0, 5/7.0f,0,0, 2,0,0,0, 5/7.0f,0,0, 0,2,0,0, 5/7.0f,0,0, 0,0,0,2, 5/7.0f,0,0);
 
 	std::vector<Tetrahedron> holdTetra = std::vector<Tetrahedron>(3);
-	Tetrahedron baseTetra = Tetrahedron(0,0,0,0, 0,0,0, 1,0,0,0, 0,1,0, 0,1,0,0, 0,0,1, 0,0,1,0, 0,0,0);
-	PrismifyByVec(baseTetra.lines[0], baseTetra.lines[1], baseTetra.lines[2], glm::vec4(0, 0, 0, 1), holdTetra);
-	models[10] = holdTetra[0];
-	models[11] = holdTetra[1];
-	models[12] = holdTetra[2];
-	PrismifyByVec(baseTetra.lines[3], baseTetra.lines[1], baseTetra.lines[2], glm::vec4(0, 0, 0, 1), holdTetra);
-	models[13] = holdTetra[0];
-	models[14] = holdTetra[1];
-	models[15] = holdTetra[2];
-	PrismifyByVec(baseTetra.lines[0], baseTetra.lines[3], baseTetra.lines[2], glm::vec4(0, 0, 0, 1), holdTetra);
-	models[16] = holdTetra[0];
-	models[17] = holdTetra[1];
-	models[18] = holdTetra[2];
-	PrismifyByVec(baseTetra.lines[0], baseTetra.lines[1], baseTetra.lines[3], glm::vec4(0, 0, 0, 1), holdTetra);
-	models[19] = holdTetra[0];
-	models[20] = holdTetra[1];
-	models[21] = holdTetra[2];
+	Line baseLines[4] = {Line(0,0,0,0,0,0,0), Line(1,0,0,0,0,1,0), Line(0,1,0,0,0,0,1), Line(0,0,1,0,0,0,0)};
+	models[10] = Tetrahedron(0,0,0,0, 0,0,0, 1,0,0,0, 0,1,0, 0,1,0,0, 0,0,1, 0,0,1,0, 0,0,0);
+	models[11] = Tetrahedron(0,0,0,0, 0,0,0, 1,0,0,0, 0,1,0, 0,1,0,0, 0,0,1, 0,0,1,0, 0,0,0);
+	models[11].Translate(0, 0, 0, 1);
+	PrismifyByVec(baseLines[0], baseLines[1], baseLines[2], glm::vec4(0, 0, 0, 1), glm::vec3(1, 0, 0), holdTetra);
+	models[12] = holdTetra[0];
+	models[13] = holdTetra[1];
+	models[14] = holdTetra[2];
+	PrismifyByVec(baseLines[3], baseLines[1], baseLines[2], glm::vec4(0, 0, 0, 1), glm::vec3(1, 0, 0), holdTetra);
+	models[15] = holdTetra[0];
+	models[16] = holdTetra[1];
+	models[17] = holdTetra[2];
+	PrismifyByVec(baseLines[0], baseLines[3], baseLines[2], glm::vec4(0, 0, 0, 1), glm::vec3(1, 0, 0), holdTetra);
+	models[18] = holdTetra[0];
+	models[19] = holdTetra[1];
+	models[20] = holdTetra[2];
+	PrismifyByVec(baseLines[0], baseLines[1], baseLines[3], glm::vec4(0, 0, 0, 1), glm::vec3(1, 0, 0), holdTetra);
+	models[21] = holdTetra[0];
+	models[22] = holdTetra[1];
+	models[23] = holdTetra[2];
 
 	modelStarts[0] = 0;
 	modelStarts[1] = 5;
