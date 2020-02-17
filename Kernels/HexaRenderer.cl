@@ -4,55 +4,27 @@ typedef struct
 	float value;
 } SortItem;
 
-__kernel void MakeFace(__global float4* points, __global char* inStates, __global float4* texCoords, __global char* outStates)
+__kernel void HexaMakeFace(__global float4* points, __global char* inStates, __global float4* texCoords, __global char* outStates)
 {
 	int thisID = get_global_id(0);
-	float4 posVec[6];
-	float4 texVec[6];
+	float4 posVec[12];
+	float4 texVec[12];
 	int checkSize = 0;
-	if (inStates[(thisID*6) + 0] == 0)
+	for (int i = 0; i < 12; i++)
 	{
-		posVec[checkSize] = points[(thisID*6) + 0];
-		texVec[checkSize] = texCoords[(thisID*6) + 0];
-		checkSize++;
+		if (inStates[(thisID*12) + i] == 0)
+		{
+			posVec[checkSize] = points[(thisID*12) + i];
+			texVec[checkSize] = texCoords[(thisID*12) + i];
+			checkSize++;
+		}
 	}
-	if (inStates[(thisID*6) + 1] == 0)
-	{
-		posVec[checkSize] = points[(thisID*6) + 1];
-		texVec[checkSize] = texCoords[(thisID*6) + 1];
-		checkSize++;
-	}
-	if (inStates[(thisID*6) + 2] == 0)
-	{
-		posVec[checkSize] = points[(thisID*6) + 2];
-		texVec[checkSize] = texCoords[(thisID*6) + 2];
-		checkSize++;
-	}
-	if (inStates[(thisID*6) + 3] == 0)
-	{
-		posVec[checkSize] = points[(thisID*6) + 3];
-		texVec[checkSize] = texCoords[(thisID*6) + 3];
-		checkSize++;
-	}
-	if (inStates[(thisID*6) + 4] == 0)
-	{
-		posVec[checkSize] = points[(thisID*6) + 4];
-		texVec[checkSize] = texCoords[(thisID*6) + 4];
-		checkSize++;
-	}
-	if (inStates[(thisID*6) + 5] == 0)
-	{
-		posVec[checkSize] = points[(thisID*6) + 5];
-		texVec[checkSize] = texCoords[(thisID*6) + 5];
-		checkSize++;
-	}
-	if (checkSize < 3)
-	{
+	if (checkSize < 3){
 		outStates[thisID] = -1;
 		return;
 	}
 	outStates[thisID] = checkSize;
-	float2 planedVertices[6];
+	float2 planedVertices[12];
 	{
 		float4 origin = posVec[0];
 		float4 planeVec1 = posVec[1] - origin;
@@ -97,28 +69,27 @@ __kernel void MakeFace(__global float4* points, __global char* inStates, __globa
 	float2 centroid;
 	centroid.x = 0;
 	centroid.y = 0;
-	SortItem rightVertices[6];
-	SortItem leftVertices[6];
+	SortItem rightVertices[12];
+	SortItem leftVertices[12];
 	int rcount = 0;
 	int lcount = 0;
 	for (int i = 0; i < checkSize; i++)
 	{
 		centroid += planedVertices[i];
 	}
-	centroid /= checkSize;
+	centroid /= (float)checkSize;
 	for (int i = 0; i < checkSize; i++)
 	{
 		float2* vertex;
 		vertex = planedVertices + i;
 		*vertex -= centroid;
+		float mag = (vertex->x*vertex->x) + (vertex->y*vertex->y);
 		if (vertex->x > 0)
 		{
-			float mag = (vertex->x*vertex->x) + (vertex->y*vertex->y);
-			if (vertex->y < 0) //Sin(theta)^2 = cross/magnitude. Cross of point and (1,0). Sin is invertable between -90 and 90 deg. Cross is x * |x| 
+			if (vertex->y < 0) //Sin(theta) = cross/magnitude. Cross of point and (1,0). Sin is invertable between -90 and 90 deg. Cross is y * |y| 
 			{
 				rightVertices[rcount].id = i;
 				rightVertices[rcount].value = -(vertex->y * vertex->y) / mag;
-
 			}
 			else
 			{
@@ -129,12 +100,10 @@ __kernel void MakeFace(__global float4* points, __global char* inStates, __globa
 		}
 		else
 		{
-			float mag = (vertex->x*vertex->x) + (vertex->y*vertex->y);
 			if (vertex->y < 0)
 			{
 				leftVertices[lcount].id = i;
 				leftVertices[lcount].value = -(vertex->y * vertex->y) / mag;
-
 			}
 			else
 			{
@@ -188,15 +157,15 @@ __kernel void MakeFace(__global float4* points, __global char* inStates, __globa
 	checkSize = rcount;
 	for (int i = 0; i < checkSize; i++)
 	{
-		points[(thisID * 6) + ocount] = posVec[rightVertices[i].id];
-		texCoords[(thisID * 6) + ocount] = texVec[rightVertices[i].id];
+		points[(thisID * 12) + ocount] = posVec[rightVertices[i].id];
+		texCoords[(thisID * 12) + ocount] = texVec[rightVertices[i].id];
 		ocount++;
 	}
 	checkSize = lcount;
 	for (int i = checkSize - 1; i >= 0; i--)
 	{
-		points[(thisID * 6) + ocount] = posVec[leftVertices[i].id];
-		texCoords[(thisID * 6) + ocount] = texVec[leftVertices[i].id];
+		points[(thisID * 12) + ocount] = posVec[leftVertices[i].id];
+		texCoords[(thisID * 12) + ocount] = texVec[leftVertices[i].id];
 		ocount++;
 	}
 }
