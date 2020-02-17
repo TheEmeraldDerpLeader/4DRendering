@@ -1,7 +1,18 @@
 #include "KernelHelper.h"
 GPUProgram::GPUProgram()
 {
+	int error = 0;
+	cl::Platform::get(&platforms);
 
+	platform = platforms.front();
+	error = platform.getDevices(CL_DEVICE_TYPE_GPU, &devices);
+	if (error != 0)
+	{
+		std::cout << error << '\n';
+		abort();
+	}
+	device = devices.front();
+	context = cl::Context(device);
 }
 GPUProgram::GPUProgram(std::string kernelFilePath)
 {

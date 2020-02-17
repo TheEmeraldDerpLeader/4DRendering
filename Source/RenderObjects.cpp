@@ -171,26 +171,35 @@ Renderable::Renderable()
 	offset = glm::vec4(0);
 	modelID = 0;
 	textureID = 0;
-	tetraCount = 1;
+	polyCount = 1;
 }
 
-Renderable::Renderable(glm::mat4x4 transformationMatrix, glm::vec4 offsetVec, int modelIDInt, int textureIDInt, int tetraCountInt)
+Renderable::Renderable(glm::mat4x4 transformationMatrix, glm::vec4 offsetVec, int modelIDInt, int textureIDInt, int polyCountInt)
 {
 	transformation = transformationMatrix;
 	offset = offsetVec;
 	modelID = modelIDInt;
 	textureID = textureIDInt;
-	tetraCount = tetraCountInt;
+	polyCount = polyCountInt;
 }
 //RenderManager
 RenderManager::RenderManager()
 {
-	crossSection = GPUProgram("Assets\\Kernels\\CrossSection.cl");
+	crossSection = GPUProgram();
+	crossSection.CreateProgram("Assets\\Kernels\\TetraCrossSection.cl");
 	crossSection.SetFunction(0, "CrossSection");
 	crossSection.CreateProgram("Assets\\Kernels\\TetraRenderer.cl");
 	crossSection.SetFunction(1, "MakeFace");
-	models.resize(24);
-	modelStarts.resize(3);
+	crossSection.CreateProgram("Assets\\Kernels\\DynamicCrossSection.cl");
+	crossSection.SetFunction(2, "DynCrossSection");
+	crossSection.CreateProgram("Assets\\Kernels\\HexaCrossSection.cl");
+	crossSection.SetFunction(3, "HexaCrossSection");
+	crossSection.CreateProgram("Assets\\Kernels\\HexaRenderer.cl");
+	crossSection.SetFunction(4, "HexaMakeFace");
+
+	tetraModels.resize(24);
+	tetraModelStarts.resize(3); 
+#pragma region Tetra Models
 	//Red Gradient
 	//pentachoronModel[0] = Tetrahedron(0,0,0,0, 0,0,0, 1,0,0,0, 0,0,0, 0,1,0,0, 0,0,0, 0,0,1,0, 0,0,0); 
 	//pentachoronModel[1] = Tetrahedron(0,0,0,1, 1,0,0, 1,0,0,0, 0,0,0, 0,1,0,0, 0,0,0, 0,0,1,0, 0,0,0);
@@ -199,11 +208,11 @@ RenderManager::RenderManager()
 	//pentachoronModel[4] = Tetrahedron(0,0,0,0, 0,0,0, 1,0,0,0, 0,0,0, 0,1,0,0, 0,0,0, 0,0,0,1, 1,0,0);
 	float phi = 0.5f + sqrtf(1.25f);
 	//celestial Colors
-	models[5] = Tetrahedron(2,0,0,0, 0,0,0, 0,2,0,0, 1,0,0, 0,0,2,0, 0,1,0, 0,0,0,2, 0,0,1);
-	models[6] = Tetrahedron(phi,phi,phi,phi, 0,0,0, 0,2,0,0, 1,0,0, 0,0,2,0, 0,1,0, 0,0,0,2, 0,0,1);
-	models[7] = Tetrahedron(2,0,0,0, 0,0,0, phi,phi,phi,phi, 1,0,0, 0,0,2,0, 0,1,0, 0,0,0,2, 0,0,1);
-	models[8] = Tetrahedron(2,0,0,0, 0,0,0, 0,2,0,0, 1,0,0, phi,phi,phi,phi, 0,1,0, 0,0,0,2, 0,0,1);
-	models[9] = Tetrahedron(2,0,0,0, 0,0,0, 0,2,0,0, 1,0,0, 0,0,2,0, 0,1,0, phi,phi,phi,phi, 0,0,1);
+	tetraModels[5] = Tetrahedron(2,0,0,0, 0,0,0, 0,2,0,0, 1,0,0, 0,0,2,0, 0,1,0, 0,0,0,2, 0,0,1);
+	tetraModels[6] = Tetrahedron(phi,phi,phi,phi, 0,0,0, 0,2,0,0, 1,0,0, 0,0,2,0, 0,1,0, 0,0,0,2, 0,0,1);
+	tetraModels[7] = Tetrahedron(2,0,0,0, 0,0,0, phi,phi,phi,phi, 1,0,0, 0,0,2,0, 0,1,0, 0,0,0,2, 0,0,1);
+	tetraModels[8] = Tetrahedron(2,0,0,0, 0,0,0, 0,2,0,0, 1,0,0, phi,phi,phi,phi, 0,1,0, 0,0,0,2, 0,0,1);
+	tetraModels[9] = Tetrahedron(2,0,0,0, 0,0,0, 0,2,0,0, 1,0,0, 0,0,2,0, 0,1,0, phi,phi,phi,phi, 0,0,1);
 
 	//RGB Colors
 	//pentachoronModel[0] = Tetrahedron(0,0,0,0, 1,1,1, 1,0,0,0, 1,0,0, 0,1,0,0, 0,1,0, 0,0,1,0, 0,0,1);
@@ -234,63 +243,100 @@ RenderManager::RenderManager()
 	//pentachoronModel[4] = Tetrahedron(0,0,0,0, 0,0,0, 1,0,0,0, 0,2,0, 0,1,0,0, 0,0,2, 0,0,0,1, 2,0,0);
 
 	//Cell Color
-	models[0] = Tetrahedron(0,0,0,0, 1/7.0f,0,0, 2,0,0,0, 1/7.0f,0,0, 0,2,0,0, 1/7.0f,0,0, 0,0,2,0, 1/7.0f,0,0);
-	models[1] = Tetrahedron(0,0,0,2, 2/7.0f,0,0, 2,0,0,0, 2/7.0f,0,0, 0,2,0,0, 2/7.0f,0,0, 0,0,2,0, 2/7.0f,0,0);
-	models[2] = Tetrahedron(0,0,0,0, 4/7.0f,0,0, 0,0,0,2, 4/7.0f,0,0, 0,2,0,0, 4/7.0f,0,0, 0,0,2,0, 4/7.0f,0,0);
-	models[3] = Tetrahedron(0,0,0,0, 3/7.0f,0,0, 2,0,0,0, 3/7.0f,0,0, 0,0,0,2, 3/7.0f,0,0, 0,0,2,0, 3/7.0f,0,0);
-	models[4] = Tetrahedron(0,0,0,0, 5/7.0f,0,0, 2,0,0,0, 5/7.0f,0,0, 0,2,0,0, 5/7.0f,0,0, 0,0,0,2, 5/7.0f,0,0);
+	tetraModels[0] = Tetrahedron(0,0,0,0, 1/7.0f,0,0, 2,0,0,0, 1/7.0f,0,0, 0,2,0,0, 1/7.0f,0,0, 0,0,2,0, 1/7.0f,0,0);
+	tetraModels[1] = Tetrahedron(0,0,0,2, 2/7.0f,0,0, 2,0,0,0, 2/7.0f,0,0, 0,2,0,0, 2/7.0f,0,0, 0,0,2,0, 2/7.0f,0,0);
+	tetraModels[2] = Tetrahedron(0,0,0,0, 4/7.0f,0,0, 0,0,0,2, 4/7.0f,0,0, 0,2,0,0, 4/7.0f,0,0, 0,0,2,0, 4/7.0f,0,0);
+	tetraModels[3] = Tetrahedron(0,0,0,0, 3/7.0f,0,0, 2,0,0,0, 3/7.0f,0,0, 0,0,0,2, 3/7.0f,0,0, 0,0,2,0, 3/7.0f,0,0);
+	tetraModels[4] = Tetrahedron(0,0,0,0, 5/7.0f,0,0, 2,0,0,0, 5/7.0f,0,0, 0,2,0,0, 5/7.0f,0,0, 0,0,0,2, 5/7.0f,0,0);
 
 	std::vector<Tetrahedron> holdTetra = std::vector<Tetrahedron>(3);
-	Line baseLines[4] = {Line(0,0,0,0,0,0,0), Line(1,0,0,0,0,1,0), Line(0,1,0,0,0,0,1), Line(0,0,1,0,0,0,0)};
-	models[10] = Tetrahedron(0,0,0,0, 0,0,0, 1,0,0,0, 0,1,0, 0,1,0,0, 0,0,1, 0,0,1,0, 0,0,0);
-	models[11] = Tetrahedron(0,0,0,0, 0,0,0, 1,0,0,0, 0,1,0, 0,1,0,0, 0,0,1, 0,0,1,0, 0,0,0);
-	models[11].Translate(0, 0, 0, 1);
-	PrismifyByVec(baseLines[0], baseLines[1], baseLines[2], glm::vec4(0, 0, 0, 1), glm::vec3(1, 0, 0), holdTetra);
-	models[12] = holdTetra[0];
-	models[13] = holdTetra[1];
-	models[14] = holdTetra[2];
-	PrismifyByVec(baseLines[3], baseLines[1], baseLines[2], glm::vec4(0, 0, 0, 1), glm::vec3(1, 0, 0), holdTetra);
-	models[15] = holdTetra[0];
-	models[16] = holdTetra[1];
-	models[17] = holdTetra[2];
-	PrismifyByVec(baseLines[0], baseLines[3], baseLines[2], glm::vec4(0, 0, 0, 1), glm::vec3(1, 0, 0), holdTetra);
-	models[18] = holdTetra[0];
-	models[19] = holdTetra[1];
-	models[20] = holdTetra[2];
-	PrismifyByVec(baseLines[0], baseLines[1], baseLines[3], glm::vec4(0, 0, 0, 1), glm::vec3(1, 0, 0), holdTetra);
-	models[21] = holdTetra[0];
-	models[22] = holdTetra[1];
-	models[23] = holdTetra[2];
+	Line baseLines1[4] = {Line(0,0,0,0,0,0,0), Line(1,0,0,0,0,1,0), Line(0,1,0,0,0,0,1), Line(0,0,1,0,0,0,0)};
+	Line baseLines2[4] = {Line(0,0,0,1,1,0,0), Line(1,0,0,1,1,1,0), Line(0,1,0,1,1,0,1), Line(0,0,1,1,1,0,0)};
+	tetraModels[10] = Tetrahedron(0,0,0,0, 0,0,0, 1,0,0,0, 0,1,0, 0,1,0,0, 0,0,1, 0,0,1,0, 0,0,0);
+	tetraModels[11] = Tetrahedron(0,0,0,0, 1,0,0, 1,0,0,0, 1,1,0, 0,1,0,0, 1,0,1, 0,0,1,0, 1,0,0);
+	tetraModels[11].Translate(0, 0, 0, 1);
+	//PrismifyByVec(baseLines[0], baseLines[1], baseLines[2], glm::vec4(0, 0, 0, 1), glm::vec3(1, 0, 0), holdTetra);
+	PrismifyByTri(baseLines1[0], baseLines1[1], baseLines1[2], baseLines2[0], baseLines2[1], baseLines2[2], holdTetra);
+	tetraModels[12] = holdTetra[0];
+	tetraModels[13] = holdTetra[1];
+	tetraModels[14] = holdTetra[2];
+	PrismifyByTri(baseLines1[3], baseLines1[1], baseLines1[2], baseLines2[3], baseLines2[1], baseLines2[2], holdTetra);
+	tetraModels[15] = holdTetra[0];
+	tetraModels[16] = holdTetra[1];
+	tetraModels[17] = holdTetra[2];
+	PrismifyByTri(baseLines1[0], baseLines1[3], baseLines1[2], baseLines2[0], baseLines2[3], baseLines2[2], holdTetra);
+	tetraModels[18] = holdTetra[0];
+	tetraModels[19] = holdTetra[1];
+	tetraModels[20] = holdTetra[2];
+	PrismifyByTri(baseLines1[0], baseLines1[1], baseLines1[3], baseLines2[0], baseLines2[1], baseLines2[3], holdTetra);
+	tetraModels[21] = holdTetra[0];
+	tetraModels[22] = holdTetra[1];
+	tetraModels[23] = holdTetra[2];
+#pragma endregion
+	tetraModelStarts[0] = 0;
+	tetraModelStarts[1] = 5;
+	tetraModelStarts[2] = 10;
 
-	modelStarts[0] = 0;
-	modelStarts[1] = 5;
-	modelStarts[2] = 10;
-
-	Line* modelLines = new Line[models.size()*6];
-	for (int i = 0; i < models.size(); i++) 
+	Line* modelLines = new Line[tetraModels.size()*6];
+	for (int i = 0; i < tetraModels.size(); i++) 
 	{
 		for (int l = 0; l < 6; l++)
 		{
-			modelLines[(i * 6) + l] = models[i].lines[l];
+			modelLines[(i * 6) + l] = tetraModels[i].lines[l];
 		}
 	}
-	modelBuffer = cl::Buffer(crossSection.context, CL_MEM_HOST_WRITE_ONLY | CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(Tetrahedron)*models.size(), modelLines);
-	delete[] modelLines;
+	tetraModelBuffer = cl::Buffer(crossSection.context, CL_MEM_HOST_WRITE_ONLY | CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(Tetrahedron)*tetraModels.size(), modelLines);
+	delete modelLines;
+
+	hexaModels.resize(8);
+	hexaModelStarts.resize(1);
+#pragma region Hexa Models
+	glm::vec4 cubeP[16] = { glm::vec4(-1,-1,-1,-1),glm::vec4(1,-1,-1,-1),glm::vec4(-1,1,-1,-1),glm::vec4(1,1,-1,-1),
+	glm::vec4(-1,-1,1,-1),glm::vec4(1,-1,1,-1),glm::vec4(-1,1,1,-1),glm::vec4(1,1,1,-1),
+	glm::vec4(-1,-1,-1,1),glm::vec4(1,-1,-1,1),glm::vec4(-1,1,-1,1),glm::vec4(1,1,-1,1),
+	glm::vec4(-1,-1,1,1),glm::vec4(1,-1,1,1),glm::vec4(-1,1,1,1),glm::vec4(1,1,1,1) };
+	glm::vec3 cubeT[8] = { glm::vec3(0,0,0),glm::vec3(1,0,0),glm::vec3(0,1,0),glm::vec3(1,1,0),
+	glm::vec3(0,0,1),glm::vec3(1,0,1),glm::vec3(0,1,1),glm::vec3(1,1,1) };
+	hexaModels[0] = Hexahedron(cubeP[0],cubeT[0], cubeP[1],cubeT[1], cubeP[3],cubeT[2], cubeP[2],cubeT[3], cubeP[4],cubeT[4], cubeP[5],cubeT[5], cubeP[7],cubeT[6], cubeP[6],cubeT[7]);
+	hexaModels[1] = Hexahedron(cubeP[8],cubeT[0], cubeP[9],cubeT[1], cubeP[11],cubeT[2], cubeP[10],cubeT[3], cubeP[12],cubeT[4], cubeP[13],cubeT[5], cubeP[15],cubeT[6], cubeP[14],cubeT[7]);
+	hexaModels[2] = Hexahedron(cubeP[0],cubeT[0], cubeP[8],cubeT[1], cubeP[10],cubeT[2], cubeP[2],cubeT[3], cubeP[4],cubeT[4], cubeP[12],cubeT[5], cubeP[14],cubeT[6], cubeP[6],cubeT[7]);
+	hexaModels[3] = Hexahedron(cubeP[1],cubeT[0], cubeP[9],cubeT[1], cubeP[11],cubeT[2], cubeP[3],cubeT[3], cubeP[5],cubeT[4], cubeP[13],cubeT[5], cubeP[15],cubeT[6], cubeP[7],cubeT[7]);
+	hexaModels[4] = Hexahedron(cubeP[0],cubeT[0], cubeP[1],cubeT[1], cubeP[9],cubeT[2], cubeP[8],cubeT[3], cubeP[4],cubeT[4], cubeP[5],cubeT[5], cubeP[13],cubeT[6], cubeP[12],cubeT[7]);
+	hexaModels[5] = Hexahedron(cubeP[2],cubeT[0], cubeP[3],cubeT[1], cubeP[11],cubeT[2], cubeP[10],cubeT[3], cubeP[6],cubeT[4], cubeP[7],cubeT[5], cubeP[15],cubeT[6], cubeP[14],cubeT[7]);
+	hexaModels[6] = Hexahedron(cubeP[0],cubeT[0], cubeP[1],cubeT[1], cubeP[3],cubeT[2], cubeP[2],cubeT[3], cubeP[8],cubeT[4], cubeP[9],cubeT[5], cubeP[11],cubeT[6], cubeP[10],cubeT[7]);
+	hexaModels[7] = Hexahedron(cubeP[4],cubeT[0], cubeP[5],cubeT[1], cubeP[7],cubeT[2], cubeP[6],cubeT[3], cubeP[12],cubeT[4], cubeP[13],cubeT[5], cubeP[15],cubeT[6], cubeP[14],cubeT[7]);
+#pragma endregion
+	hexaModelStarts[0] = 0;
+	modelLines = new Line[hexaModels.size() * 12];
+	for (int i = 0; i < hexaModels.size(); i++)
+	{
+		for (int l = 0; l < 12; l++)
+		{
+			modelLines[(i * 12) + l] = hexaModels[i].lines[l];
+		}
+	}
+	hexaModelBuffer = cl::Buffer(crossSection.context, CL_MEM_HOST_WRITE_ONLY | CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(Hexahedron)*hexaModels.size(), modelLines);
+	delete modelLines;
 }
 
-void RenderManager::SetBuffer(Camera& camera, unsigned int* VBOaddress, int textureCount, unsigned int* bufferSizes)
+void RenderManager::ClearDeques(unsigned int textureCountInt)
 {
-	int modelSize = renderables.size();
+	if (vertexPos != nullptr)
+		delete[] vertexPos;
+	if (vertexCol != nullptr)
+		delete[] vertexCol;
+	if (vertexTex != nullptr)
+		delete[] vertexTex;
+	textureCount = textureCountInt;
+	vertexPos = new std::deque<glm::vec4>[textureCount];
+	vertexCol = new std::deque<glm::vec3>[textureCount];
+	vertexTex = new std::deque<glm::vec3>[textureCount];
+}
+void RenderManager::ModelGenerate(Camera& camera)
+{
+	int modelSize = tetraRenderables.size();
 	if (modelSize == 0)
-	{
-		for (int i = 0; i < textureCount; i++)
-		{
-			bufferSizes[i] = 0;
-		}
-	}
-	std::deque<glm::vec4>* vertexPos = new std::deque<glm::vec4>[textureCount];
-	std::deque<glm::vec3>* vertexCol = new std::deque<glm::vec3>[textureCount];
-	std::deque<glm::vec3>* vertexTex = new std::deque<glm::vec3>[textureCount];
+		return;
 #pragma region Kernel setup and launch
 	glm::mat4x4* modelMatrices = new glm::mat4x4[modelSize];
 	glm::vec4* modelOffsets = new glm::vec4[modelSize];
@@ -298,7 +344,7 @@ void RenderManager::SetBuffer(Camera& camera, unsigned int* VBOaddress, int text
 	int tetraSize = 0;
 	for (int i = 0; i < modelSize; i++)
 	{
-		tetraSize += renderables[i].tetraCount;
+		tetraSize += tetraRenderables[i].polyCount;
 	}
 	int lineSize = tetraSize * 6;
 
@@ -313,13 +359,13 @@ void RenderManager::SetBuffer(Camera& camera, unsigned int* VBOaddress, int text
 		int index = 0;
 		for (int i = 0; i < modelSize; i++)
 		{
-			Renderable& renderable = renderables[i];
+			Renderable& renderable = tetraRenderables[i];
 			modelMatrices[i] = renderable.transformation;
 			modelOffsets[i] = renderable.offset;
-			for (int t = 0; t < renderable.tetraCount; t++)
+			for (int t = 0; t < renderable.polyCount; t++)
 			{
 				modelIDs[index] = i;
-				tetraIDs[index] = modelStarts[renderable.modelID] + t;
+				tetraIDs[index] = tetraModelStarts[renderable.modelID] + t;
 				index++;
 			}
 		}
@@ -343,16 +389,16 @@ void RenderManager::SetBuffer(Camera& camera, unsigned int* VBOaddress, int text
 	crossSection.SetVariable(0, 6, texCoordBuffer);
 	crossSection.SetVariable(0, 7, matrixBuffer);
 	crossSection.SetVariable(0, 8, offsetBuffer);
-	crossSection.SetVariable(0, 9, modelBuffer);
+	crossSection.SetVariable(0, 9, tetraModelBuffer);
 	crossSection.LaunchKernel(0, 0, tetraSize);
 
-	delete[]  modelMatrices;
-	delete[]  modelOffsets;
-	delete[]  tetraIDs;
+	delete modelMatrices;
+	delete modelOffsets;
+	delete tetraIDs;
 #pragma endregion
-	crossSection.ReadKernel(0, pointBuffer, GL_TRUE, 0, sizeof(glm::vec4) * lineSize, points);
-	crossSection.ReadKernel(0, stateBuffer, GL_TRUE, 0, sizeof(char) * lineSize, states); // 8 ms
-	crossSection.ReadKernel(0, texCoordBuffer, GL_TRUE, 0, sizeof(glm::vec4) * lineSize, texCoords);
+	crossSection.ReadKernel(0, pointBuffer, CL_TRUE, 0, sizeof(glm::vec4) * lineSize, points);
+	crossSection.ReadKernel(0, stateBuffer, CL_TRUE, 0, sizeof(char) * lineSize, states);
+	crossSection.ReadKernel(0, texCoordBuffer, CL_TRUE, 0, sizeof(glm::vec4) * lineSize, texCoords);
 #pragma region tetrahedron kernel
 	if (tetraSize > 0)
 	{
@@ -363,9 +409,9 @@ void RenderManager::SetBuffer(Camera& camera, unsigned int* VBOaddress, int text
 		crossSection.SetVariable(1, 2, texCoordBuffer);
 		crossSection.SetVariable(1, 3, tetraStateBuffer);
 		crossSection.LaunchKernel(1, 0, tetraSize);
-		crossSection.ReadKernel(1, pointBuffer, GL_TRUE, 0, sizeof(glm::vec4) * lineSize, points);
-		crossSection.ReadKernel(1, texCoordBuffer, GL_TRUE, 0, sizeof(glm::vec4) * lineSize, texCoords);
-		crossSection.ReadKernel(1, tetraStateBuffer, GL_TRUE, 0, sizeof(char)*tetraSize, tetraStates);
+		crossSection.ReadKernel(1, pointBuffer, CL_TRUE, 0, sizeof(glm::vec4) * lineSize, points);
+		crossSection.ReadKernel(1, texCoordBuffer, CL_TRUE, 0, sizeof(glm::vec4) * lineSize, texCoords);
+		crossSection.ReadKernel(1, tetraStateBuffer, CL_TRUE, 0, sizeof(char)*tetraSize, tetraStates);
 		for (int i = 0; i < tetraSize; i++)
 		{
 			if (tetraStates[i] >= 3)
@@ -373,7 +419,7 @@ void RenderManager::SetBuffer(Camera& camera, unsigned int* VBOaddress, int text
 				int checkSize = tetraStates[i] - 2;
 				for (int t = 0; t < checkSize; t++)
 				{
-					int tID = renderables[modelIDs[i]].textureID;
+					int tID = tetraRenderables[modelIDs[i]].textureID;
 					vertexPos[tID].push_back(points[(i * 6) + 0]);
 					vertexCol[tID].push_back(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
 					vertexTex[tID].push_back(texCoords[(i * 6) + 0]);
@@ -385,12 +431,218 @@ void RenderManager::SetBuffer(Camera& camera, unsigned int* VBOaddress, int text
 					vertexTex[tID].push_back(texCoords[(i * 6) + 2 + t]);
 				}
 			}
-		} //7 ms
-		delete[] tetraStates;
+		}
+		delete tetraStates;
 	}
 #pragma endregion
 
-#pragma region Buffer setup
+	delete modelIDs;
+	delete points;
+	delete states;
+	delete texCoords;
+}
+
+void RenderManager::DynamicGenerate(Camera& camera)
+{
+	int tetraSize = dynamicTetras.size();
+	if (tetraSize == 0)
+		return;
+#pragma region Kernel setup and launch
+	int lineSize = tetraSize * 6;
+	Line* lineData = new Line[lineSize];
+	for (int i = 0; i < tetraSize; i++)
+	{
+		lineData[(i * 6) + 0] = dynamicTetras[i].lines[0];
+		lineData[(i * 6) + 1] = dynamicTetras[i].lines[1];
+		lineData[(i * 6) + 2] = dynamicTetras[i].lines[2];
+		lineData[(i * 6) + 3] = dynamicTetras[i].lines[3];
+		lineData[(i * 6) + 4] = dynamicTetras[i].lines[4];
+		lineData[(i * 6) + 5] = dynamicTetras[i].lines[5];
+	}
+
+	glm::vec4* points = new glm::vec4[lineSize];
+	char* states = new char[lineSize];
+	glm::vec4* texCoords = new glm::vec4[lineSize];
+
+	cl::Buffer lineBuffer(crossSection.context, CL_MEM_HOST_NO_ACCESS | CL_MEM_COPY_HOST_PTR, sizeof(Line) * lineSize, lineData);
+	cl::Buffer pointBuffer(crossSection.context, CL_MEM_HOST_READ_ONLY, sizeof(glm::vec4) * lineSize);
+	cl::Buffer stateBuffer(crossSection.context, CL_MEM_HOST_READ_ONLY, sizeof(char) * lineSize);
+	cl::Buffer texCoordBuffer(crossSection.context, CL_MEM_HOST_READ_ONLY, sizeof(glm::vec4) * lineSize);
+	cl::Buffer matrixBuffer(crossSection.context, CL_MEM_HOST_NO_ACCESS | CL_MEM_COPY_HOST_PTR, sizeof(glm::mat4), camera.GetTransformValuePtr());
+	cl::Buffer offsetBuffer(crossSection.context, CL_MEM_HOST_NO_ACCESS | CL_MEM_COPY_HOST_PTR, sizeof(glm::vec4), glm::value_ptr(camera.position));
+
+	crossSection.SetVariable(2, 0, lineBuffer);
+	crossSection.SetVariable(2, 1, pointBuffer);
+	crossSection.SetVariable(2, 2, stateBuffer);
+	crossSection.SetVariable(2, 3, texCoordBuffer);
+	crossSection.SetVariable(2, 4, matrixBuffer);
+	crossSection.SetVariable(2, 5, offsetBuffer);
+	crossSection.LaunchKernel(2, 0, lineSize);
+
+	delete lineData;
+#pragma endregion
+	crossSection.ReadKernel(2, pointBuffer, CL_TRUE, 0, sizeof(glm::vec4) * lineSize, points);
+	crossSection.ReadKernel(2, stateBuffer, CL_TRUE, 0, sizeof(char) * lineSize, states);
+	crossSection.ReadKernel(2, texCoordBuffer, CL_TRUE, 0, sizeof(glm::vec4) * lineSize, texCoords);
+#pragma region tetrahedron kernel
+	if (tetraSize > 0)
+	{
+		char* tetraStates = new char[tetraSize];
+		cl::Buffer tetraStateBuffer(crossSection.context, CL_MEM_HOST_READ_ONLY, sizeof(char)*tetraSize);
+		crossSection.SetVariable(1, 0, pointBuffer);
+		crossSection.SetVariable(1, 1, stateBuffer);
+		crossSection.SetVariable(1, 2, texCoordBuffer);
+		crossSection.SetVariable(1, 3, tetraStateBuffer);
+		crossSection.LaunchKernel(1, 0, tetraSize);
+		crossSection.ReadKernel(1, pointBuffer, CL_TRUE, 0, sizeof(glm::vec4) * lineSize, points);
+		crossSection.ReadKernel(1, texCoordBuffer, CL_TRUE, 0, sizeof(glm::vec4) * lineSize, texCoords);
+		crossSection.ReadKernel(1, tetraStateBuffer, CL_TRUE, 0, sizeof(char)*tetraSize, tetraStates);
+		for (int i = 0; i < tetraSize; i++)
+		{
+			if (tetraStates[i] >= 3)
+			{
+				int checkSize = tetraStates[i] - 2;
+				for (int t = 0; t < checkSize; t++)
+				{
+					int tID = dynamicTex[i];
+					vertexPos[tID].push_back(points[(i * 6) + 0]);
+					vertexCol[tID].push_back(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
+					vertexTex[tID].push_back(texCoords[(i * 6) + 0]);
+					vertexPos[tID].push_back(points[(i * 6) + 1 + t]);
+					vertexCol[tID].push_back(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
+					vertexTex[tID].push_back(texCoords[(i * 6) + 1 + t]);
+					vertexPos[tID].push_back(points[(i * 6) + 2 + t]);
+					vertexCol[tID].push_back(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
+					vertexTex[tID].push_back(texCoords[(i * 6) + 2 + t]);
+				}
+			}
+		}
+		delete tetraStates;
+	}
+#pragma endregion
+
+	delete points;
+	delete states;
+	delete texCoords;
+}
+
+void RenderManager::HexaModelGenerate(Camera& camera)
+{
+	int modelSize = hexaRenderables.size();
+	if (modelSize == 0)
+		return;
+#pragma region Kernel setup and launch
+	glm::mat4x4* modelMatrices = new glm::mat4x4[modelSize];
+	glm::vec4* modelOffsets = new glm::vec4[modelSize];
+
+	int hexaSize = 0;
+	for (int i = 0; i < modelSize; i++)
+	{
+		hexaSize += hexaRenderables[i].polyCount;
+	}
+	int lineSize = hexaSize * 12;
+
+	int* modelIDs = new int[hexaSize]; ///Used later as well
+	int* hexaIDs = new int[hexaSize];
+
+	glm::vec4* points = new glm::vec4[lineSize];
+	char* states = new char[lineSize];
+	glm::vec4* texCoords = new glm::vec4[lineSize];
+
+	{
+		int index = 0;
+		for (int i = 0; i < modelSize; i++)
+		{
+			Renderable& renderable = hexaRenderables[i];
+			modelMatrices[i] = renderable.transformation;
+			modelOffsets[i] = renderable.offset;
+			for (int t = 0; t < renderable.polyCount; t++)
+			{
+				modelIDs[index] = i;
+				hexaIDs[index] = hexaModelStarts[renderable.modelID] + t;
+				index++;
+			}
+		}
+	}
+	cl::Buffer modelMatricesBuffer(crossSection.context, CL_MEM_HOST_NO_ACCESS | CL_MEM_COPY_HOST_PTR, sizeof(glm::mat4x4)*modelSize, modelMatrices);
+	cl::Buffer modelOffsetsBuffer(crossSection.context, CL_MEM_HOST_NO_ACCESS | CL_MEM_COPY_HOST_PTR, sizeof(glm::vec4)*modelSize, modelOffsets);
+	cl::Buffer modelIDBuffer(crossSection.context, CL_MEM_HOST_NO_ACCESS | CL_MEM_COPY_HOST_PTR, sizeof(int) * hexaSize, modelIDs);
+	cl::Buffer hexaIDBuffer(crossSection.context, CL_MEM_HOST_NO_ACCESS | CL_MEM_COPY_HOST_PTR, sizeof(int) * hexaSize, hexaIDs);
+	cl::Buffer pointBuffer(crossSection.context, CL_MEM_HOST_READ_ONLY, sizeof(glm::vec4) * lineSize);
+	cl::Buffer stateBuffer(crossSection.context, CL_MEM_HOST_READ_ONLY, sizeof(char) * lineSize);
+	cl::Buffer texCoordBuffer(crossSection.context, CL_MEM_HOST_READ_ONLY, sizeof(glm::vec4) * lineSize);
+	cl::Buffer matrixBuffer(crossSection.context, CL_MEM_HOST_NO_ACCESS | CL_MEM_COPY_HOST_PTR, sizeof(glm::mat4), camera.GetTransformValuePtr());
+	cl::Buffer offsetBuffer(crossSection.context, CL_MEM_HOST_NO_ACCESS | CL_MEM_COPY_HOST_PTR, sizeof(glm::vec4), glm::value_ptr(camera.position));
+
+	crossSection.SetVariable(3, 0, modelMatricesBuffer);
+	crossSection.SetVariable(3, 1, modelOffsetsBuffer);
+	crossSection.SetVariable(3, 2, modelIDBuffer);
+	crossSection.SetVariable(3, 3, hexaIDBuffer);
+	crossSection.SetVariable(3, 4, pointBuffer);
+	crossSection.SetVariable(3, 5, stateBuffer);
+	crossSection.SetVariable(3, 6, texCoordBuffer);
+	crossSection.SetVariable(3, 7, matrixBuffer);
+	crossSection.SetVariable(3, 8, offsetBuffer);
+	crossSection.SetVariable(3, 9, hexaModelBuffer);
+	crossSection.LaunchKernel(3, 0, hexaSize);
+
+	delete modelMatrices;
+	delete modelOffsets;
+	delete hexaIDs;
+#pragma endregion
+	crossSection.ReadKernel(3, pointBuffer, CL_TRUE, 0, sizeof(glm::vec4) * lineSize, points);
+	crossSection.ReadKernel(3, stateBuffer, CL_TRUE, 0, sizeof(char) * lineSize, states);
+	crossSection.ReadKernel(3, texCoordBuffer, CL_TRUE, 0, sizeof(glm::vec4) * lineSize, texCoords);
+#pragma region replacehedron kernel
+	if (hexaSize > 0)
+	{
+		char* hexaStates = new char[hexaSize];
+		cl::Buffer hexaStateBuffer(crossSection.context, CL_MEM_HOST_READ_ONLY, sizeof(char)*hexaSize);
+		crossSection.SetVariable(4, 0, pointBuffer);
+		crossSection.SetVariable(4, 1, stateBuffer);
+		crossSection.SetVariable(4, 2, texCoordBuffer);
+		crossSection.SetVariable(4, 3, hexaStateBuffer);
+		crossSection.LaunchKernel(4, 0, hexaSize);
+		crossSection.ReadKernel(4, pointBuffer, CL_TRUE, 0, sizeof(glm::vec4) * lineSize, points);
+		crossSection.ReadKernel(4, texCoordBuffer, CL_TRUE, 0, sizeof(glm::vec4) * lineSize, texCoords);
+		crossSection.ReadKernel(4, hexaStateBuffer, CL_TRUE, 0, sizeof(char)*hexaSize, hexaStates);
+		for (int i = 0; i < hexaSize; i++)
+		{
+			if (hexaStates[i] >= 3)
+			{
+				int checkSize = hexaStates[i] - 2;
+				for (int t = 0; t < checkSize; t++)
+				{
+					int tID = hexaRenderables[modelIDs[i]].textureID;
+					vertexPos[tID].push_back(points[(i * 12) + 0]);
+					vertexCol[tID].push_back(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
+					vertexTex[tID].push_back(texCoords[(i * 12) + 0]);
+					vertexPos[tID].push_back(points[(i * 12) + 1 + t]);
+					//vertexCol[tID].push_back(glm::vec4(0.2f + (0.4f*t), 0.2f + (0.4f*t), 0.2f + (0.4f*t), 1.0f));
+					vertexCol[tID].push_back(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
+					vertexTex[tID].push_back(texCoords[(i * 12) + 1 + t]);
+					vertexPos[tID].push_back(points[(i * 12) + 2 + t]);
+					//vertexCol[tID].push_back(glm::vec4(0.2f+(0.4f*t), 0.2f + (0.4f*t), 0.2f + (0.4f*t), 1.0f));
+					vertexCol[tID].push_back(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
+					vertexTex[tID].push_back(texCoords[(i * 12) + 2 + t]);
+				}
+			}
+		}
+		delete hexaStates;
+	}
+#pragma endregion
+
+	delete modelIDs;
+	delete points;
+	delete states;
+	delete texCoords;
+}
+void RenderManager::CopyToBuffer(unsigned int* VBOaddress, unsigned int* bufferSizes)
+{
+	for (int i = 0; i < textureCount; i++)
+	{
+		bufferSizes[i] = 0;
+	}
 	int bufferSize = 0;
 	for (int i = 0; i < textureCount; i++)
 	{
@@ -417,15 +669,7 @@ void RenderManager::SetBuffer(Camera& camera, unsigned int* VBOaddress, int text
 		glBindBuffer(GL_ARRAY_BUFFER, VBOaddress[i]);
 		glBufferData(GL_ARRAY_BUFFER, 9 * sizeof(float) * vertexPos[i].size(), vboData, GL_DYNAMIC_DRAW);
 	}
-#pragma endregion
-	delete[]  modelIDs;
-	delete[] vboData;
-	delete[] points;
-	delete[] states;
-	delete[] texCoords;
-	delete[] vertexPos;
-	delete[] vertexCol;
-	delete[] vertexTex;
+	delete vboData;
 }
 //Cube
 /*

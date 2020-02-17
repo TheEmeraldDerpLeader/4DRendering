@@ -42,15 +42,31 @@ struct Tetrahedron
 	Tetrahedron();
 	Tetrahedron(Line, Line, Line, Line, Line, Line);
 	Tetrahedron(glm::vec4, glm::vec3, glm::vec4, glm::vec3, glm::vec4, glm::vec3, glm::vec4, glm::vec3);
-	Tetrahedron(float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float);
+	Tetrahedron(float, float, float, float, float, float, float, float, float, float, float, float, float, float,
+		float, float, float, float, float, float, float, float, float, float, float, float, float, float);
 
 	void Translate(float, float, float, float);
 
 	bool operator==(Tetrahedron&);
 };
 
+struct Hexahedron
+{
+	Line lines[12];
+
+	Hexahedron();
+	Hexahedron(Line, Line, Line, Line, Line, Line, Line, Line, Line, Line, Line, Line);
+	Hexahedron(glm::vec4, glm::vec3, glm::vec4, glm::vec3, glm::vec4, glm::vec3, glm::vec4, glm::vec3, glm::vec4, glm::vec3, glm::vec4, glm::vec3, glm::vec4, glm::vec3, glm::vec4, glm::vec3);
+	Hexahedron(float, float, float, float, float, float, float, float, float, float, float, float, float, float,
+		float, float, float, float, float, float, float, float, float, float, float, float, float, float,
+		float, float, float, float, float, float, float, float, float, float, float, float, float, float,
+		float, float, float, float, float, float, float, float, float, float, float, float, float, float);
+
+	void Translate(float, float, float, float);
+};
+
 void PrismifyByVec(Line, Line, Line, glm::vec4, glm::vec3, std::vector<Tetrahedron>&);
-void PrismifyByTri();
+void PrismifyByTri(Line, Line, Line, Line, Line, Line, std::vector<Tetrahedron>&);
 
 /*
 struct Cube

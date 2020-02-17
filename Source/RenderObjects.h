@@ -53,7 +53,7 @@ public:
 	glm::vec4 offset;
 	int modelID;
 	int textureID;
-	int tetraCount;
+	int polyCount;
 
 	Renderable();
 	Renderable(glm::mat4x4, glm::vec4, int, int, int);
@@ -63,13 +63,26 @@ class RenderManager
 {
 	GPUProgram crossSection;
 public:
-	std::vector<Tetrahedron> models;
-	std::vector<unsigned int> modelStarts;
-	cl::Buffer modelBuffer;
-	std::deque<Renderable> renderables;
+	std::vector<Tetrahedron> tetraModels;
+	std::vector<unsigned int> tetraModelStarts;
+	std::vector<Hexahedron> hexaModels;
+	std::vector<unsigned int> hexaModelStarts;
+	cl::Buffer tetraModelBuffer;
+	cl::Buffer hexaModelBuffer;
+	std::deque<Renderable> tetraRenderables; //modelGen
+	std::deque<Tetrahedron> dynamicTetras; //dynamicGen
+	std::deque<unsigned int> dynamicTex;
+	std::deque<Renderable> hexaRenderables; //hexaModelGen
+	unsigned int textureCount;
+	std::deque<glm::vec4>* vertexPos;
+	std::deque<glm::vec3>* vertexCol;
+	std::deque<glm::vec3>* vertexTex;
 
 	RenderManager();
 
-	void SetBuffer(Camera&, unsigned int*, int, unsigned int*);
-
+	void ClearDeques(unsigned int);
+	void ModelGenerate(Camera&);
+	void DynamicGenerate(Camera&);
+	void HexaModelGenerate(Camera&);
+	void CopyToBuffer(unsigned int*, unsigned int*);
 };

@@ -34,7 +34,7 @@ bool firstMouse = true;
 bool cursorLock = true;
 bool terminated = false;
 
-const unsigned int textureCount = 3;
+const unsigned int textureCount = 4;
 unsigned int VBO[textureCount];
 unsigned int VAO[textureCount];
 unsigned int errorCode;
@@ -46,18 +46,32 @@ float cursorLockWait = 0.0f;
 
 Texture textures[textureCount];
 
-//TODO: Create dynamic tetra model system. Seperate the strict penta functionality from the kernel. Probably have a var for tetras in one model
+//TODO: Fix wrong rotation orderer
 
-//Later: readd model-less render start and octachoron renderer. Point lighting system
+//Later: Point lighting system, transparency
 
 int main(){
 	glm::mat4x4 perspective = glm::perspective(45.0f, (float)screenx / (float)screeny, 0.1f, 100.0f);
 
-	camera.position = glm::vec4(0, 0, 3, 0.0f);
+	camera.position = glm::vec4(0, 0, 6, 0.0f);
+	glm::mat4x4 derpTest = glm::mat4x4(1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1);
+	renderManager.tetraRenderables.push_back(Renderable(glm::mat4x4(derpTest), glm::vec4(0, 0, 0, 0), 0, 0, 5));
+	renderManager.tetraRenderables.push_back(Renderable(glm::mat4x4(derpTest), glm::vec4(2, 0, 0, 0), 1, 1, 5));
+	renderManager.tetraRenderables.push_back(Renderable(glm::mat4x4(3), glm::vec4(-5, 0, 0, -0.5f), 2, 2, 14));
+	//renderManager.tetraRenderables.push_back(Renderable(glm::mat4x4(1), glm::vec4(0, 0, 0, -0.5f), 2, 2, 14));
 
-	renderManager.renderables.push_back(Renderable(glm::mat4x4(1), glm::vec4(0, 0, 0, 0), 0, 0, 5));
-	renderManager.renderables.push_back(Renderable(glm::mat4x4(1), glm::vec4(2, 0, 0, 0), 1, 1, 5));
-	renderManager.renderables.push_back(Renderable(glm::mat4x4(1), glm::vec4(-5, 0, 0, -0.5f), 2, 2, 14));
+	renderManager.dynamicTetras.push_back(Tetrahedron(glm::vec4(0,2,0,0), glm::vec3(0,0,0), glm::vec4(1,2,0,0), glm::vec3(1,0,0), glm::vec4(0,3,0,0), glm::vec3(0,1,0), glm::vec4(0,2,1,0), glm::vec3(0,0,1)));
+	renderManager.dynamicTex.push_back(1);
+	renderManager.dynamicTetras.push_back(Tetrahedron(glm::vec4(0,2,0,1), glm::vec3(1,1,1), glm::vec4(1,2,0,0), glm::vec3(1,0,0), glm::vec4(0,3,0,0), glm::vec3(0,1,0), glm::vec4(0,2,1,0), glm::vec3(0,0,1)));
+	renderManager.dynamicTex.push_back(1);
+	renderManager.dynamicTetras.push_back(Tetrahedron(glm::vec4(0,2,0,0), glm::vec3(0,0,0), glm::vec4(0,2,0,1), glm::vec3(1,1,1), glm::vec4(0,3,0,0), glm::vec3(0,1,0), glm::vec4(0,2,1,0), glm::vec3(0,0,1)));
+	renderManager.dynamicTex.push_back(1);
+	renderManager.dynamicTetras.push_back(Tetrahedron(glm::vec4(0,2,0,0), glm::vec3(0,0,0), glm::vec4(1,2,0,0), glm::vec3(1,0,0), glm::vec4(0,2,0,1), glm::vec3(1,1,1), glm::vec4(0,2,1,0), glm::vec3(0,0,1)));
+	renderManager.dynamicTex.push_back(1);
+	renderManager.dynamicTetras.push_back(Tetrahedron(glm::vec4(0,2,0,0), glm::vec3(0,0,0), glm::vec4(1,2,0,0), glm::vec3(1,0,0), glm::vec4(0,3,0,0), glm::vec3(0,1,0), glm::vec4(0,2,0,1), glm::vec3(1,1,1)));
+	renderManager.dynamicTex.push_back(1);
+
+	renderManager.hexaRenderables.push_back(Renderable(derpTest, glm::vec4(0,-2,0,0), 0, 1, 8));
 
 	sf::ContextSettings settings;
 	settings.majorVersion = 3;
@@ -95,6 +109,7 @@ int main(){
 	CreateTexture(6, nullptr, 8, 8, 8, textures[0]);
 	CreateTexture(1, nullptr, 128, 128, 128, textures[1]);
 	CreateTexture(2, nullptr, 128, 128, 128, textures[2]);
+	CreateTexture(0, nullptr, 128, 128, 128, textures[3]);
 
 	unsigned int perspectiveLoc = glGetUniformLocation(shader.ID, "perspectiveMat");
 	glUniformMatrix4fv(perspectiveLoc, 1, GL_FALSE, glm::value_ptr(perspective));
@@ -145,7 +160,6 @@ int main(){
 		std::cout << errorCode << '\n';
 		abort();
 	}
-
 	unsigned int bufferSizes[textureCount];
 	sf::Clock frameTime;
 	while (window.isOpen())
@@ -179,7 +193,11 @@ int main(){
 			shader.use();
 			glActiveTexture(GL_TEXTURE0);
 
-			renderManager.SetBuffer(camera, VBO, textureCount, bufferSizes);
+			renderManager.ClearDeques(textureCount);
+			renderManager.ModelGenerate(camera);
+			renderManager.DynamicGenerate(camera);
+			renderManager.HexaModelGenerate(camera);
+			renderManager.CopyToBuffer(VBO, bufferSizes);
 			errorCode = glGetError();
 			for (int i = 0; i < textureCount; i++)
 			{
@@ -503,9 +521,9 @@ void CreateTexture(int presetNumber, unsigned char* data, unsigned int xDim, uns
 		break;
 	}
 	glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA, xDim, yDim, zDim, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	if (initData)
@@ -569,6 +587,22 @@ void ProcessInput(sf::Window* window)
 		if (sf::Keyboard::isKeyPressed(sf::Keyboard::A))
 		{
 			camera.position += rotation * glm::vec4(-deltaTime * moveSpeed, 0, 0, 0);
+		}
+		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up))
+		{
+			camera.RotateYZ(60.0f*deltaTime);
+		}
+		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down))
+		{
+			camera.RotateYZ(-60.0f*deltaTime);
+		}
+		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right))
+		{
+			camera.RotateZX(-60.0f*deltaTime);
+		}
+		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left))
+		{
+			camera.RotateZX(60.0f*deltaTime);
 		}
 		if (sf::Keyboard::isKeyPressed(sf::Keyboard::E))
 		{
