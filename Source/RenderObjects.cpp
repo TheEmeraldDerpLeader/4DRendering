@@ -297,14 +297,14 @@ RenderManager::RenderManager()
 	glm::vec4(-1,-1,1,1),glm::vec4(1,-1,1,1),glm::vec4(-1,1,1,1),glm::vec4(1,1,1,1) };
 	glm::vec3 cubeT[8] = { glm::vec3(0,0,0),glm::vec3(1,0,0),glm::vec3(0,1,0),glm::vec3(1,1,0),
 	glm::vec3(0,0,1),glm::vec3(1,0,1),glm::vec3(0,1,1),glm::vec3(1,1,1) };
-	hexaModels[0] = Hexahedron(cubeP[0],cubeT[0], cubeP[1],cubeT[1], cubeP[3],cubeT[2], cubeP[2],cubeT[3], cubeP[4],cubeT[4], cubeP[5],cubeT[5], cubeP[7],cubeT[6], cubeP[6],cubeT[7]);
-	hexaModels[1] = Hexahedron(cubeP[8],cubeT[0], cubeP[9],cubeT[1], cubeP[11],cubeT[2], cubeP[10],cubeT[3], cubeP[12],cubeT[4], cubeP[13],cubeT[5], cubeP[15],cubeT[6], cubeP[14],cubeT[7]);
-	hexaModels[2] = Hexahedron(cubeP[0],cubeT[0], cubeP[8],cubeT[1], cubeP[10],cubeT[2], cubeP[2],cubeT[3], cubeP[4],cubeT[4], cubeP[12],cubeT[5], cubeP[14],cubeT[6], cubeP[6],cubeT[7]);
-	hexaModels[3] = Hexahedron(cubeP[1],cubeT[0], cubeP[9],cubeT[1], cubeP[11],cubeT[2], cubeP[3],cubeT[3], cubeP[5],cubeT[4], cubeP[13],cubeT[5], cubeP[15],cubeT[6], cubeP[7],cubeT[7]);
-	hexaModels[4] = Hexahedron(cubeP[0],cubeT[0], cubeP[1],cubeT[1], cubeP[9],cubeT[2], cubeP[8],cubeT[3], cubeP[4],cubeT[4], cubeP[5],cubeT[5], cubeP[13],cubeT[6], cubeP[12],cubeT[7]);
-	hexaModels[5] = Hexahedron(cubeP[2],cubeT[0], cubeP[3],cubeT[1], cubeP[11],cubeT[2], cubeP[10],cubeT[3], cubeP[6],cubeT[4], cubeP[7],cubeT[5], cubeP[15],cubeT[6], cubeP[14],cubeT[7]);
-	hexaModels[6] = Hexahedron(cubeP[0],cubeT[0], cubeP[1],cubeT[1], cubeP[3],cubeT[2], cubeP[2],cubeT[3], cubeP[8],cubeT[4], cubeP[9],cubeT[5], cubeP[11],cubeT[6], cubeP[10],cubeT[7]);
-	hexaModels[7] = Hexahedron(cubeP[4],cubeT[0], cubeP[5],cubeT[1], cubeP[7],cubeT[2], cubeP[6],cubeT[3], cubeP[12],cubeT[4], cubeP[13],cubeT[5], cubeP[15],cubeT[6], cubeP[14],cubeT[7]);
+	hexaModels[0] = Hexahedron(cubeP[0],cubeT[0], cubeP[1],cubeT[1], cubeP[3],cubeT[3], cubeP[2],cubeT[2], cubeP[4],cubeT[4], cubeP[5],cubeT[5], cubeP[7],cubeT[7], cubeP[6],cubeT[6]);
+	hexaModels[1] = Hexahedron(cubeP[8],cubeT[0], cubeP[9],cubeT[1], cubeP[11],cubeT[3], cubeP[10],cubeT[2], cubeP[12],cubeT[4], cubeP[13],cubeT[5], cubeP[15],cubeT[7], cubeP[14],cubeT[6]);
+	hexaModels[2] = Hexahedron(cubeP[0],cubeT[0], cubeP[8],cubeT[1], cubeP[10],cubeT[3], cubeP[2],cubeT[2], cubeP[4],cubeT[4], cubeP[12],cubeT[5], cubeP[14],cubeT[7], cubeP[6],cubeT[6]);
+	hexaModels[3] = Hexahedron(cubeP[1],cubeT[0], cubeP[9],cubeT[1], cubeP[11],cubeT[3], cubeP[3],cubeT[2], cubeP[5],cubeT[4], cubeP[13],cubeT[5], cubeP[15],cubeT[7], cubeP[7],cubeT[6]);
+	hexaModels[4] = Hexahedron(cubeP[0],cubeT[0], cubeP[1],cubeT[1], cubeP[9],cubeT[3], cubeP[8],cubeT[2], cubeP[4],cubeT[4], cubeP[5],cubeT[5], cubeP[13],cubeT[7], cubeP[12],cubeT[6]);
+	hexaModels[5] = Hexahedron(cubeP[2],cubeT[0], cubeP[3],cubeT[1], cubeP[11],cubeT[3], cubeP[10],cubeT[2], cubeP[6],cubeT[4], cubeP[7],cubeT[5], cubeP[15],cubeT[7], cubeP[14],cubeT[6]);
+	hexaModels[6] = Hexahedron(cubeP[0],cubeT[0], cubeP[1],cubeT[1], cubeP[3],cubeT[3], cubeP[2],cubeT[2], cubeP[8],cubeT[4], cubeP[9],cubeT[5], cubeP[11],cubeT[7], cubeP[10],cubeT[6]);
+	hexaModels[7] = Hexahedron(cubeP[4],cubeT[0], cubeP[5],cubeT[1], cubeP[7],cubeT[3], cubeP[6],cubeT[2], cubeP[12],cubeT[4], cubeP[13],cubeT[5], cubeP[15],cubeT[7], cubeP[14],cubeT[6]);
 #pragma endregion
 	hexaModelStarts[0] = 0;
 	modelLines = new Line[hexaModels.size() * 12];
@@ -435,7 +435,7 @@ void RenderManager::ModelGenerate(Camera& camera)
 		delete tetraStates;
 	}
 #pragma endregion
-
+	
 	delete modelIDs;
 	delete points;
 	delete states;

@@ -46,17 +46,18 @@ float cursorLockWait = 0.0f;
 
 Texture textures[textureCount];
 
-//TODO: Fix wrong rotation orderer
+//TODO: Transparency D:
 
-//Later: Point lighting system, transparency
+//Later: Point lighting system
 
 int main(){
 	glm::mat4x4 perspective = glm::perspective(45.0f, (float)screenx / (float)screeny, 0.1f, 100.0f);
 
 	camera.position = glm::vec4(0, 0, 6, 0.0f);
-	glm::mat4x4 derpTest = glm::mat4x4(1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1);
-	renderManager.tetraRenderables.push_back(Renderable(glm::mat4x4(derpTest), glm::vec4(0, 0, 0, 0), 0, 0, 5));
-	renderManager.tetraRenderables.push_back(Renderable(glm::mat4x4(derpTest), glm::vec4(2, 0, 0, 0), 1, 1, 5));
+	glm::mat4x4 derpTest = RotateMat(0,0,0,0,0,0);
+	// modelID, textureID, cellCount
+	renderManager.tetraRenderables.push_back(Renderable(glm::mat4x4(1), glm::vec4(0, 0, 0, 0), 0, 0, 5));
+	renderManager.tetraRenderables.push_back(Renderable(glm::mat4x4(1), glm::vec4(2, 0, 0, 0), 1, 1, 5));
 	renderManager.tetraRenderables.push_back(Renderable(glm::mat4x4(3), glm::vec4(-5, 0, 0, -0.5f), 2, 2, 14));
 	//renderManager.tetraRenderables.push_back(Renderable(glm::mat4x4(1), glm::vec4(0, 0, 0, -0.5f), 2, 2, 14));
 
@@ -109,7 +110,7 @@ int main(){
 	CreateTexture(6, nullptr, 8, 8, 8, textures[0]);
 	CreateTexture(1, nullptr, 128, 128, 128, textures[1]);
 	CreateTexture(2, nullptr, 128, 128, 128, textures[2]);
-	CreateTexture(0, nullptr, 128, 128, 128, textures[3]);
+	CreateTexture(5, nullptr, 128, 128, 128, textures[3]);
 
 	unsigned int perspectiveLoc = glGetUniformLocation(shader.ID, "perspectiveMat");
 	glUniformMatrix4fv(perspectiveLoc, 1, GL_FALSE, glm::value_ptr(perspective));
