@@ -50,28 +50,18 @@ Texture textures[textureCount];
 
 //Later: Point lighting system
 
-int main(){
+int main()
+{
 	glm::mat4x4 perspective = glm::perspective(45.0f, (float)screenx / (float)screeny, 0.1f, 100.0f);
 
-	camera.position = glm::vec4(0, 0, 6, 0.0f);
-	glm::mat4x4 derpTest = RotateMat(0,0,0,0,0,0);
+	camera.position = glm::vec4(0, 0, 6, 0.1f);
+	camera.RotateXW(0.5f);
+	glm::mat4x4 derpTest = RotateMat(0, 0, 0, 0, 0, 0);
 	// modelID, textureID, cellCount
 	renderManager.tetraRenderables.push_back(Renderable(glm::mat4x4(1), glm::vec4(0, 0, 0, 0), 0, 0, 5));
 	renderManager.tetraRenderables.push_back(Renderable(glm::mat4x4(1), glm::vec4(2, 0, 0, 0), 1, 1, 5));
 	renderManager.tetraRenderables.push_back(Renderable(glm::mat4x4(3), glm::vec4(-5, 0, 0, -0.5f), 2, 2, 14));
 	//renderManager.tetraRenderables.push_back(Renderable(glm::mat4x4(1), glm::vec4(0, 0, 0, -0.5f), 2, 2, 14));
-
-	renderManager.dynamicTetras.push_back(Tetrahedron(glm::vec4(0,2,0,0), glm::vec3(0,0,0), glm::vec4(1,2,0,0), glm::vec3(1,0,0), glm::vec4(0,3,0,0), glm::vec3(0,1,0), glm::vec4(0,2,1,0), glm::vec3(0,0,1)));
-	renderManager.dynamicTex.push_back(1);
-	renderManager.dynamicTetras.push_back(Tetrahedron(glm::vec4(0,2,0,1), glm::vec3(1,1,1), glm::vec4(1,2,0,0), glm::vec3(1,0,0), glm::vec4(0,3,0,0), glm::vec3(0,1,0), glm::vec4(0,2,1,0), glm::vec3(0,0,1)));
-	renderManager.dynamicTex.push_back(1);
-	renderManager.dynamicTetras.push_back(Tetrahedron(glm::vec4(0,2,0,0), glm::vec3(0,0,0), glm::vec4(0,2,0,1), glm::vec3(1,1,1), glm::vec4(0,3,0,0), glm::vec3(0,1,0), glm::vec4(0,2,1,0), glm::vec3(0,0,1)));
-	renderManager.dynamicTex.push_back(1);
-	renderManager.dynamicTetras.push_back(Tetrahedron(glm::vec4(0,2,0,0), glm::vec3(0,0,0), glm::vec4(1,2,0,0), glm::vec3(1,0,0), glm::vec4(0,2,0,1), glm::vec3(1,1,1), glm::vec4(0,2,1,0), glm::vec3(0,0,1)));
-	renderManager.dynamicTex.push_back(1);
-	renderManager.dynamicTetras.push_back(Tetrahedron(glm::vec4(0,2,0,0), glm::vec3(0,0,0), glm::vec4(1,2,0,0), glm::vec3(1,0,0), glm::vec4(0,3,0,0), glm::vec3(0,1,0), glm::vec4(0,2,0,1), glm::vec3(1,1,1)));
-	renderManager.dynamicTex.push_back(1);
-
 	renderManager.hexaRenderables.push_back(Renderable(derpTest, glm::vec4(0,-2,0,0), 0, 1, 8));
 
 	sf::ContextSettings settings;
@@ -110,7 +100,7 @@ int main(){
 	CreateTexture(6, nullptr, 8, 8, 8, textures[0]);
 	CreateTexture(1, nullptr, 128, 128, 128, textures[1]);
 	CreateTexture(2, nullptr, 128, 128, 128, textures[2]);
-	CreateTexture(5, nullptr, 128, 128, 128, textures[3]);
+	CreateTexture(4, nullptr, 128, 128, 128, textures[3]);
 
 	unsigned int perspectiveLoc = glGetUniformLocation(shader.ID, "perspectiveMat");
 	glUniformMatrix4fv(perspectiveLoc, 1, GL_FALSE, glm::value_ptr(perspective));
@@ -653,3 +643,88 @@ void ProcessInput(sf::Window* window)
 			cursorLockWait = 0;
 	}
 }
+//Sphere approx
+/*
+	{
+		int accCount = 8;
+		for (int u = 0; u < accCount; u++)
+		{
+			for (int v = 0; v < accCount; v++)
+			{
+				for (int w = 0; w < accCount; w++)
+				{
+					glm::vec4 points[8];
+					glm::vec3 texes[8];
+					for (int x = 0; x < 2; x++)
+					{
+						for (int y = 0; y < 2; y++)
+						{
+							for (int z = 0; z < 2; z++)
+							{
+								points[(z * 4) + (y * 2) + x] = glm::vec4(
+									cos(1 * PI*(double)(u + x) / (double)accCount)*cos(1 * PI*(double)(v + y) / (double)accCount)*cos(1 * PI*(double)(w + z) / (double)accCount),
+									sin(1 * PI*(double)(u + x) / (double)accCount) + 4,
+									cos(1 * PI*(double)(u + x) / (double)accCount)*sin(1 * PI*(double)(v + y) / (double)accCount),
+									cos(1 * PI*(double)(u + x) / (double)accCount)*cos(1 * PI*(double)(v + y) / (double)accCount)*sin(1 * PI*(double)(w + z) / (double)accCount));
+								texes[(z * 4) + (y * 2) + x] = glm::vec3(
+									(sin(1 * PI*(double)(u + x) / (double)accCount)/2.0f)+0.5f,
+									(cos(1 * PI*(double)(u + x) / (double)accCount)*sin(1 * PI*(double)(v + y) / (double)accCount)/2.0f)+0.5f,
+									(cos(1 * PI*(double)(u + x) / (double)accCount)*cos(1 * PI*(double)(v + y) / (double)accCount)*sin(1 * PI*(double)(w + z) / (double)accCount)/2.0f)+0.5f);
+							}
+						}
+					}
+					renderManager.dynamicTetras.push_back(Tetrahedron(points[0], texes[0], points[1], texes[1], points[2], texes[2], points[4], texes[4]));
+					renderManager.dynamicTex.push_back(3);
+					renderManager.dynamicTetras.push_back(Tetrahedron(points[7], texes[7], points[1], texes[1], points[2], texes[2], points[4], texes[4]));
+					renderManager.dynamicTex.push_back(3);
+					renderManager.dynamicTetras.push_back(Tetrahedron(points[7], texes[7], points[1], texes[1], points[5], texes[5], points[4], texes[4]));
+					renderManager.dynamicTex.push_back(3);
+					renderManager.dynamicTetras.push_back(Tetrahedron(points[7], texes[7], points[1], texes[1], points[2], texes[2], points[3], texes[3]));
+					renderManager.dynamicTex.push_back(3);
+					renderManager.dynamicTetras.push_back(Tetrahedron(points[7], texes[7], points[6], texes[6], points[2], texes[2], points[4], texes[4]));
+					renderManager.dynamicTex.push_back(3);
+				}
+			}
+		}
+		for (int u = 0; u < accCount; u++)
+		{
+			for (int v = 0; v < accCount; v++)
+			{
+				for (int w = 0; w < accCount; w++)
+				{
+					glm::vec4 points[8];
+					glm::vec3 texes[8];
+					for (int x = 0; x < 2; x++)
+					{
+						for (int y = 0; y < 2; y++)
+						{
+							for (int z = 0; z < 2; z++)
+							{
+								points[(z * 4) + (y * 2) + x] = glm::vec4(
+									cos(1 * PI*(double)(u + x) / (double)accCount)*cos(1 * PI*(double)(v + y) / (double)accCount)*cos(1 * PI*(double)(w + z) / (double)accCount),
+									-sin(1 * PI*(double)(u + x) / (double)accCount) + 4,
+									cos(1 * PI*(double)(u + x) / (double)accCount)*sin(1 * PI*(double)(v + y) / (double)accCount),
+									cos(1 * PI*(double)(u + x) / (double)accCount)*cos(1 * PI*(double)(v + y) / (double)accCount)*sin(1 * PI*(double)(w + z) / (double)accCount));
+								texes[(z * 4) + (y * 2) + x] = glm::vec3(
+									(sin(1 * PI*(double)(u + x) / (double)accCount) / 2.0f) + 0.5f,
+									(cos(1 * PI*(double)(u + x) / (double)accCount)*sin(1 * PI*(double)(v + y) / (double)accCount) / 2.0f) + 0.5f,
+									(cos(1 * PI*(double)(u + x) / (double)accCount)*cos(1 * PI*(double)(v + y) / (double)accCount)*sin(1 * PI*(double)(w + z) / (double)accCount) / 2.0f) + 0.5f);
+							}
+						}
+					}
+					renderManager.dynamicTetras.push_back(Tetrahedron(points[0], texes[0], points[1], texes[1], points[2], texes[2], points[4], texes[4]));
+					renderManager.dynamicTex.push_back(3);
+					renderManager.dynamicTetras.push_back(Tetrahedron(points[7], texes[7], points[1], texes[1], points[2], texes[2], points[4], texes[4]));
+					renderManager.dynamicTex.push_back(3);
+					renderManager.dynamicTetras.push_back(Tetrahedron(points[7], texes[7], points[1], texes[1], points[5], texes[5], points[4], texes[4]));
+					renderManager.dynamicTex.push_back(3);
+					renderManager.dynamicTetras.push_back(Tetrahedron(points[7], texes[7], points[1], texes[1], points[2], texes[2], points[3], texes[3]));
+					renderManager.dynamicTex.push_back(3);
+					renderManager.dynamicTetras.push_back(Tetrahedron(points[7], texes[7], points[6], texes[6], points[2], texes[2], points[4], texes[4]));
+					renderManager.dynamicTex.push_back(3);
+
+				}
+			}
+		}
+	}
+*/
