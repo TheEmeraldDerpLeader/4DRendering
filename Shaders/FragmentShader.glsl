@@ -8,5 +8,8 @@ uniform sampler3D texture0;
 
 void main()
 {
-	FragColor = texture(texture0, TexCoord) * vec4(vertexColor,1.0f);
+	vec4 texColor = texture(texture0, TexCoord) * vec4(vertexColor,1.0f);
+	if(texColor.a< 0.1f)
+		discard;
+	FragColor =  texColor;
 }

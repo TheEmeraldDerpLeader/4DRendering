@@ -26,7 +26,8 @@ char fragmentShader[] = "Assets\\Shaders\\FragmentShader.glsl";
 const int screenx = 800;
 const int screeny = 600;
 
-Camera camera;
+Rotater camera;
+glm::vec4 position;
 RenderManager renderManager;
 
 glm::vec2 lastMouse(screenx / 2, screeny / 2);
@@ -35,8 +36,11 @@ bool cursorLock = true;
 bool terminated = false;
 
 const unsigned int textureCount = 4;
-unsigned int VBO[textureCount];
-unsigned int VAO[textureCount];
+const unsigned int transTextureCount = 1;
+unsigned int VBOs[textureCount];
+unsigned int VAOs[textureCount];
+unsigned int transVBO;
+unsigned int transVAO;
 unsigned int errorCode;
 
 float moveSpeed = 1.0f;
@@ -45,24 +49,42 @@ float deltaTime;
 float cursorLockWait = 0.0f;
 
 Texture textures[textureCount];
+Texture transTextures[transTextureCount];
 
-//TODO: Transparency D:
+float debugTime = 0;
+float debugCount = 0;
+//TODO: Reverse order, edgecase nothing
 
-//Later: Point lighting system
+//Later: Don't clear deques every frame, Point lighting system. Finish texture gen, split RenderObjects, make RenderingGeometry use inheritance
 
 int main()
 {
 	glm::mat4x4 perspective = glm::perspective(45.0f, (float)screenx / (float)screeny, 0.1f, 100.0f);
 
-	camera.position = glm::vec4(0, 0, 6, 0.1f);
+	position = glm::vec4(0, 0, 6, 0.1f);
 	camera.RotateXW(0.5f);
 	glm::mat4x4 derpTest = RotateMat(0, 0, 0, 0, 0, 0);
-	// modelID, textureID, cellCount
-	renderManager.tetraRenderables.push_back(Renderable(glm::mat4x4(1), glm::vec4(0, 0, 0, 0), 0, 0, 5));
-	renderManager.tetraRenderables.push_back(Renderable(glm::mat4x4(1), glm::vec4(2, 0, 0, 0), 1, 1, 5));
-	renderManager.tetraRenderables.push_back(Renderable(glm::mat4x4(3), glm::vec4(-5, 0, 0, -0.5f), 2, 2, 14));
+	derpTest *= 0.5f;
+	// transformation, offset, modelID, textureID, cellCount, transparent
+	renderManager.tetraRenderables.push_back(Renderable(glm::mat4x4(1), glm::vec4(0, 0, 0, 0), 0, 0, 5,false));
+	renderManager.tetraRenderables.push_back(Renderable(glm::mat4x4(1), glm::vec4(2, 0, 0, 0), 1, 1, 5,false));
+	renderManager.tetraRenderables.push_back(Renderable(glm::mat4x4(3), glm::vec4(-5, 0, 0, -0.5f), 2, 2, 14,false));
 	//renderManager.tetraRenderables.push_back(Renderable(glm::mat4x4(1), glm::vec4(0, 0, 0, -0.5f), 2, 2, 14));
-	renderManager.hexaRenderables.push_back(Renderable(derpTest, glm::vec4(0,-2,0,0), 0, 1, 8));
+	renderManager.hexaRenderables.push_back(Renderable(derpTest, glm::vec4(0, -2, 0, 0), 0, 3, 8,false));
+	for (int x = -5; x < 5; x+=2)
+	{
+		for (int z = -5; z < 5; z+=2)
+		{
+			for (int w = -5; w < 5; w+=2)
+			{
+				renderManager.hexaRenderables.push_back(Renderable(derpTest, glm::vec4(x, -6, z, w), 0, 0, 8,true));
+			}
+		}
+	}
+	
+	renderManager.Refresh();
+	renderManager.DynRefresh();
+	renderManager.HexaRefresh();
 
 	sf::ContextSettings settings;
 	settings.majorVersion = 3;
@@ -75,20 +97,20 @@ int main()
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	//glEnable(GL_CULL_FACE); decreases triangles to shader for cull checks. Currently inefficent unless vertex shader is complex
+	//glEnable(GL_CULL_FACE);
 	glFrontFace(GL_CW);
 
 	Shader shader(vertexShader, fragmentShader);
 	shader.use();
-	glGenBuffers(textureCount, VBO);
-	glGenVertexArrays(textureCount, VAO);
+	glGenBuffers(textureCount, VBOs);
+	glGenVertexArrays(textureCount, VAOs);
 
 	unsigned int stride = sizeof(float)*9;
 
 	for (int i = 0; i < textureCount; i++)
 	{
-		glBindVertexArray(VAO[i]);
-		glBindBuffer(GL_ARRAY_BUFFER, VBO[i]);
+		glBindVertexArray(VAOs[i]);
+		glBindBuffer(GL_ARRAY_BUFFER, VBOs[i]);
 		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride, (void*)0); //Position
 		glEnableVertexAttribArray(0);
 		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, stride, (void*)(3 * sizeof(float))); //Color
@@ -96,11 +118,23 @@ int main()
 		glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, stride, (void*)(6 * sizeof(float))); //Texture coords
 		glEnableVertexAttribArray(2);
 	}
+	glGenBuffers(1, &transVBO);
+	glGenVertexArrays(1, &transVAO);
 
+	glBindVertexArray(transVAO);
+	glBindBuffer(GL_ARRAY_BUFFER, transVBO);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride, (void*)0); //Position
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, stride, (void*)(3 * sizeof(float))); //Color
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, stride, (void*)(6 * sizeof(float))); //Texture coords
+	glEnableVertexAttribArray(2);
+	
 	CreateTexture(6, nullptr, 8, 8, 8, textures[0]);
 	CreateTexture(1, nullptr, 128, 128, 128, textures[1]);
 	CreateTexture(2, nullptr, 128, 128, 128, textures[2]);
-	CreateTexture(4, nullptr, 128, 128, 128, textures[3]);
+	CreateTexture(7, nullptr, 128, 128, 128, textures[3]);
+	CreateTexture(8, nullptr, 128, 128, 128, transTextures[0]);
 
 	unsigned int perspectiveLoc = glGetUniformLocation(shader.ID, "perspectiveMat");
 	glUniformMatrix4fv(perspectiveLoc, 1, GL_FALSE, glm::value_ptr(perspective));
@@ -152,6 +186,8 @@ int main()
 		abort();
 	}
 	unsigned int bufferSizes[textureCount];
+	std::vector<unsigned int> transTextureIDs;
+	std::vector<unsigned int> transTextureRunLengths;
 	sf::Clock frameTime;
 	while (window.isOpen())
 	{
@@ -172,6 +208,8 @@ int main()
 		}
 
 		deltaTime = frameTime.getElapsedTime().asSeconds();
+		debugTime += deltaTime;
+		debugCount++;
 		std::cout << deltaTime << '\n';
 		frameTime.restart();
 		window.setActive(true);
@@ -184,19 +222,31 @@ int main()
 			shader.use();
 			glActiveTexture(GL_TEXTURE0);
 
-			renderManager.ClearDeques(textureCount);
-			renderManager.ModelGenerate(camera);
-			renderManager.DynamicGenerate(camera);
-			renderManager.HexaModelGenerate(camera);
-			renderManager.CopyToBuffer(VBO, bufferSizes);
+			renderManager.ClearDeques(textureCount, transTextureCount);
+			renderManager.ModelGenerate(camera, position);
+			renderManager.DynamicGenerate(camera, position);
+			renderManager.HexaModelGenerate(camera, position);
+			renderManager.CopyToBuffer(VBOs, bufferSizes);
 			errorCode = glGetError();
 			for (int i = 0; i < textureCount; i++)
 			{
-				glBindVertexArray(VAO[i]);
-				glBindBuffer(GL_ARRAY_BUFFER, VBO[i]);
+				glBindVertexArray(VAOs[i]);
+				glBindBuffer(GL_ARRAY_BUFFER, VBOs[i]);
 				textures[i].BindTexture(0);
 				glDrawArrays(GL_TRIANGLES, 0, bufferSizes[i]);
-				glGetError();
+			}
+			renderManager.TransCopyToBuffer(transTextureIDs, transTextureRunLengths, &transVBO);
+			if (transTextureRunLengths[0] != 0)
+			{
+				glBindVertexArray(transVAO);
+				glBindBuffer(GL_ARRAY_BUFFER, transVBO);
+				int index = 0;
+				for (int i = 0; i < transTextureIDs.size(); i++)
+				{
+					transTextures[transTextureIDs[i]].BindTexture(0);
+					glDrawArrays(GL_TRIANGLES, index * 3, transTextureRunLengths[i] * 3);
+					index += transTextureRunLengths[i];
+				}
 			}
 			glBindBuffer(GL_ARRAY_BUFFER, 0);
 			glBindVertexArray(0);
@@ -209,10 +259,10 @@ int main()
 			}
 
 			window.pushGLStates();
-			positionXText.setString("X: " + std::to_string(camera.position.x));
-			positionYText.setString("Y: " + std::to_string(camera.position.y));
-			positionZText.setString("Z: " + std::to_string(camera.position.z));
-			positionWText.setString("W: " + std::to_string(camera.position.w));
+			positionXText.setString("X: " + std::to_string(position.x));
+			positionYText.setString("Y: " + std::to_string(position.y));
+			positionZText.setString("Z: " + std::to_string(position.z));
+			positionWText.setString("W: " + std::to_string(position.w));
 			rotationYZText.setString("YZ: " + std::to_string(camera.rotation[1]));
 			rotationZXText.setString("ZX: " + std::to_string(camera.rotation[2]));
 			rotationXWText.setString("XW: " + std::to_string(camera.rotation[3]));
@@ -232,8 +282,10 @@ int main()
 		window.setActive(false);
 	}
 
-	glDeleteVertexArrays(textureCount, VAO);
-	glDeleteBuffers(textureCount, VBO);
+ 	glDeleteVertexArrays(textureCount, VAOs);
+	glDeleteBuffers(textureCount, VBOs);
+	glDeleteVertexArrays(1, &transVAO);
+	glDeleteBuffers(1, &transVBO);
 	return 0;
 }
 
@@ -506,6 +558,222 @@ void CreateTexture(int presetNumber, unsigned char* data, unsigned int xDim, uns
 		}
 #pragma endregion
 		break;
+	case 7:
+#pragma region CubeAtlas
+		for (int z = 0; z < 64; z++)
+		{
+			for (int y = 0; y < 64; y++)
+			{
+				for (int x = 0; x < 64; x++)
+				{
+					data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 0] = (unsigned char)(0);
+					data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 1] = (unsigned char)(0);
+					data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 2] = (unsigned char)(255);
+					data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 3] = (unsigned char)(255);
+				}
+			}
+		}
+		for (int z = 0; z < 64; z++)
+		{
+			for (int y = 0; y < 64; y++)
+			{
+				for (int x = 64; x < 128; x++)
+				{
+					data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 0] = (unsigned char)(255);
+					data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 1] = (unsigned char)(255);
+					data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 2] = (unsigned char)(0);
+					data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 3] = (unsigned char)(255);
+				}
+			}
+		}
+		for (int z = 0; z < 64; z++)
+		{
+			for (int y = 64; y < 128; y++)
+			{
+				for (int x = 0; x < 64; x++)
+				{
+					data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 0] = (unsigned char)(0);
+					data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 1] = (unsigned char)(255);
+					data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 2] = (unsigned char)(0);
+					data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 3] = (unsigned char)(255);
+				}
+			}
+		}
+		for (int z = 0; z < 64; z++)
+		{
+			for (int y = 64; y < 128; y++)
+			{
+				for (int x = 64; x < 128; x++)
+				{
+					data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 0] = (unsigned char)(255);
+					data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 1] = (unsigned char)(0);
+					data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 2] = (unsigned char)(255);
+					data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 3] = (unsigned char)(255);
+				}
+			}
+		}
+		for (int z = 64; z < 128; z++)
+		{
+			for (int y = 0; y < 64; y++)
+			{
+				for (int x = 0; x < 64; x++)
+				{
+					data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 0] = (unsigned char)(0);
+					data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 1] = (unsigned char)(0);
+					data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 2] = (unsigned char)(0);
+					data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 3] = (unsigned char)(255);
+				}
+			}
+		}
+		for (int z = 64; z < 128; z++)
+		{
+			for (int y = 0; y < 64; y++)
+			{
+				for (int x = 64; x < 128; x++)
+				{
+					data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 0] = (unsigned char)(255);
+					data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 1] = (unsigned char)(255);
+					data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 2] = (unsigned char)(255);
+					data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 3] = (unsigned char)(255);
+				}
+			}
+		}
+		for (int z = 64; z < 128; z++)
+		{
+			for (int y = 64; y < 128; y++)
+			{
+				for (int x = 0; x < 64; x++)
+				{
+					data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 0] = (unsigned char)(0);
+					data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 1] = (unsigned char)(255);
+					data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 2] = (unsigned char)(255);
+					data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 3] = (unsigned char)(255);
+				}
+			}
+		}
+		for (int z = 64; z < 128; z++)
+		{
+			for (int y = 64; y < 128; y++)
+			{
+				for (int x = 64; x < 128; x++)
+				{
+					data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 0] = (unsigned char)(255);
+					data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 1] = (unsigned char)(0);
+					data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 2] = (unsigned char)(0);
+					data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 3] = (unsigned char)(255);
+				}
+			}
+		}
+#pragma endregion
+		break;
+		case 8:
+#pragma region TransCubeAtlas
+			for (int z = 0; z < 64; z++)
+			{
+				for (int y = 0; y < 64; y++)
+				{
+					for (int x = 0; x < 64; x++)
+					{
+						data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 0] = (unsigned char)(0);
+						data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 1] = (unsigned char)(0);
+						data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 2] = (unsigned char)(255);
+						data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 3] = (unsigned char)(63);
+					}
+				}
+			}
+			for (int z = 0; z < 64; z++)
+			{
+				for (int y = 0; y < 64; y++)
+				{
+					for (int x = 64; x < 128; x++)
+					{
+						data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 0] = (unsigned char)(255);
+						data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 1] = (unsigned char)(255);
+						data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 2] = (unsigned char)(0);
+						data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 3] = (unsigned char)(63);
+					}
+				}
+			}
+			for (int z = 0; z < 64; z++)
+			{
+				for (int y = 64; y < 128; y++)
+				{
+					for (int x = 0; x < 64; x++)
+					{
+						data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 0] = (unsigned char)(0);
+						data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 1] = (unsigned char)(255);
+						data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 2] = (unsigned char)(0);
+						data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 3] = (unsigned char)(63);
+					}
+				}
+			}
+			for (int z = 0; z < 64; z++)
+			{
+				for (int y = 64; y < 128; y++)
+				{
+					for (int x = 64; x < 128; x++)
+					{
+						data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 0] = (unsigned char)(255);
+						data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 1] = (unsigned char)(0);
+						data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 2] = (unsigned char)(255);
+						data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 3] = (unsigned char)(63);
+					}
+				}
+			}
+			for (int z = 64; z < 128; z++)
+			{
+				for (int y = 0; y < 64; y++)
+				{
+					for (int x = 0; x < 64; x++)
+					{
+						data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 0] = (unsigned char)(0);
+						data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 1] = (unsigned char)(0);
+						data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 2] = (unsigned char)(0);
+						data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 3] = (unsigned char)(63);
+					}
+				}
+			}
+			for (int z = 64; z < 128; z++)
+			{
+				for (int y = 0; y < 64; y++)
+				{
+					for (int x = 64; x < 128; x++)
+					{
+						data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 0] = (unsigned char)(255);
+						data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 1] = (unsigned char)(255);
+						data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 2] = (unsigned char)(255);
+						data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 3] = (unsigned char)(63);
+					}
+				}
+			}
+			for (int z = 64; z < 128; z++)
+			{
+				for (int y = 64; y < 128; y++)
+				{
+					for (int x = 0; x < 64; x++)
+					{
+						data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 0] = (unsigned char)(0);
+						data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 1] = (unsigned char)(255);
+						data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 2] = (unsigned char)(255);
+						data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 3] = (unsigned char)(63);
+					}
+				}
+			}
+			for (int z = 64; z < 128; z++)
+			{
+				for (int y = 64; y < 128; y++)
+				{
+					for (int x = 64; x < 128; x++)
+					{
+						data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 0] = (unsigned char)(255);
+						data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 1] = (unsigned char)(0);
+						data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 2] = (unsigned char)(0);
+						data[(((z*(128 * 128)) + (y * 128) + x) * 4) + 3] = (unsigned char)(63);
+					}
+				}
+			}
+#pragma endregion
+			break;
 	default:
 		std::cout << "Invalid preset number\n";
 		abort();
@@ -525,11 +793,6 @@ void ProcessInput(sf::Window* window)
 {
 	glm::mat4x4 rotation = glm::inverse(camera.GetTransform());
 	//Window input
-	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Escape))
-	{
-		terminated = true;
-		window->close();
-	}
 	if (sf::Keyboard::isKeyPressed(sf::Keyboard::L) && cursorLockWait == 0)
 	{
 		if (cursorLock)
@@ -539,7 +802,7 @@ void ProcessInput(sf::Window* window)
 			window->setMouseCursorVisible(true);
 			window->setMouseCursorGrabbed(false);
 		}
-		else
+		else if(window->hasFocus())
 		{
 			cursorLock = true;
 			firstMouse = true;
@@ -550,6 +813,11 @@ void ProcessInput(sf::Window* window)
 	}
 	if (cursorLock)
 	{
+		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Escape))
+		{
+			terminated = true;
+			window->close();
+		}
 		//Movement Input
 		if (sf::Keyboard::isKeyPressed(sf::Keyboard::LShift))
 		{
@@ -565,19 +833,19 @@ void ProcessInput(sf::Window* window)
 		}
 		if (sf::Keyboard::isKeyPressed(sf::Keyboard::W))
 		{
-			camera.position += rotation * glm::vec4(0, 0, -deltaTime * moveSpeed, 0);
+			position += rotation * glm::vec4(0, 0, -deltaTime * moveSpeed, 0);
 		}
 		if (sf::Keyboard::isKeyPressed(sf::Keyboard::S))
 		{
-			camera.position += rotation * glm::vec4(0, 0, deltaTime * moveSpeed, 0);
+			position += rotation * glm::vec4(0, 0, deltaTime * moveSpeed, 0);
 		}
 		if (sf::Keyboard::isKeyPressed(sf::Keyboard::D))
 		{
-			camera.position += rotation * glm::vec4(deltaTime * moveSpeed, 0, 0, 0);
+			position += rotation * glm::vec4(deltaTime * moveSpeed, 0, 0, 0);
 		}
 		if (sf::Keyboard::isKeyPressed(sf::Keyboard::A))
 		{
-			camera.position += rotation * glm::vec4(-deltaTime * moveSpeed, 0, 0, 0);
+			position += rotation * glm::vec4(-deltaTime * moveSpeed, 0, 0, 0);
 		}
 		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up))
 		{
@@ -597,19 +865,19 @@ void ProcessInput(sf::Window* window)
 		}
 		if (sf::Keyboard::isKeyPressed(sf::Keyboard::E))
 		{
-			camera.position += rotation * glm::vec4(0, deltaTime * moveSpeed, 0, 0);
+			position += rotation * glm::vec4(0, deltaTime * moveSpeed, 0, 0);
 		}
 		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Q))
 		{
-			camera.position += rotation * glm::vec4(0, -deltaTime * moveSpeed, 0, 0);
+			position += rotation * glm::vec4(0, -deltaTime * moveSpeed, 0, 0);
 		}
 		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Num3))
 		{
-			camera.position += rotation * glm::vec4(0, 0, 0, deltaTime * moveSpeed);
+			position += rotation * glm::vec4(0, 0, 0, deltaTime * moveSpeed);
 		}
 		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Num1))
 		{
-			camera.position += rotation * glm::vec4(0, 0, 0, -deltaTime * moveSpeed);
+			position += rotation * glm::vec4(0, 0, 0, -deltaTime * moveSpeed);
 		}
 
 		//Mouse input
@@ -635,6 +903,14 @@ void ProcessInput(sf::Window* window)
 			camera.RotateZW(yOffset * deltaTime * rotationSpeed);
 		}
 		sf::Mouse::setPosition(sf::Vector2i((window->getPosition().x + (screenx / 2)), (window->getPosition().y + (screeny / 2))));
+	}
+	else
+	{
+		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Escape) && sf::Keyboard::isKeyPressed(sf::Keyboard::LShift))
+		{
+			terminated = true;
+			window->close();
+		}
 	}
 	if (cursorLockWait != 0)
 	{
