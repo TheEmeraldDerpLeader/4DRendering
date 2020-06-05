@@ -13,6 +13,7 @@
 
 #include <vector>
 #include <deque>
+#include <utility>
 
 class Texture
 {
@@ -25,16 +26,15 @@ public:
 	void BindTexture(int);
 };
 
-class Camera
+class Rotater
 {
 public:
 	glm::mat4x4 copyMatrix;
 public:
-	glm::vec4 position;
 	float rotation[6];
 
-	Camera();
-	Camera(glm::vec4, float, float, float, float, float, float);
+	Rotater();
+	Rotater(float, float, float, float, float, float);
 
 	glm::mat4x4 GetTransform();
 	float* GetTransformValuePtr();
@@ -54,9 +54,10 @@ public:
 	int modelID;
 	int textureID;
 	int polyCount;
+	bool transparent; 
 
 	Renderable();
-	Renderable(glm::mat4x4, glm::vec4, int, int, int);
+	Renderable(glm::mat4x4, glm::vec4, int, int, int, bool);
 };
 
 class RenderManager
@@ -74,15 +75,44 @@ public:
 	std::deque<unsigned int> dynamicTex;
 	std::deque<Renderable> hexaRenderables; //hexaModelGen
 	unsigned int textureCount;
+	unsigned int transTextureCount;
 	std::deque<glm::vec4>* vertexPos;
+	std::deque<glm::vec4>* transVertexPos;
 	std::deque<glm::vec3>* vertexCol;
+	std::deque<glm::vec3>* transVertexCol;
 	std::deque<glm::vec3>* vertexTex;
+	std::deque<glm::vec3>* transVertexTex;
+
+	glm::mat4x4* modelMatrices;
+	glm::vec4* modelOffsets;
+	int* modelIDs;
+	int* tetraIDs;
+	glm::vec4* points;
+	glm::vec4* texCoords;
+	char* tetraStates;
+
+	Line* dynLineData;
+	glm::vec4* dynPoints;
+	glm::vec4* dynTexCoords;
+	char* dynTetraStates;
+
+	glm::mat4x4* hexaModelMatrices;
+	glm::vec4* hexaModelOffsets;
+	int* hexaModelIDs;
+	int* hexaIDs;
+	glm::vec4* hexaPoints;
+	glm::vec4* hexaTexCoords;
+	char* hexaStates;
 
 	RenderManager();
 
-	void ClearDeques(unsigned int);
-	void ModelGenerate(Camera&);
-	void DynamicGenerate(Camera&);
-	void HexaModelGenerate(Camera&);
+	void ClearDeques(unsigned int, unsigned int);
+	void ModelGenerate(Rotater&, glm::vec4);
+	void Refresh();
+	void DynamicGenerate(Rotater&, glm::vec4);
+	void DynRefresh();
+	void HexaModelGenerate(Rotater&, glm::vec4);
+	void HexaRefresh();
 	void CopyToBuffer(unsigned int*, unsigned int*);
+	void TransCopyToBuffer(std::vector<unsigned int>&, std::vector<unsigned int>&, unsigned int*);
 };

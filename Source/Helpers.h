@@ -7,17 +7,20 @@
 
 #include <vector>
 
-glm::mat4x4 RotateMat(float, float, float, float, float, float);
+const double PI = 3.14159265359;
 
+glm::mat4x4 RotateMat(float, float, float, float, float, float);
+glm::vec4 CrossProd4(glm::vec4, glm::vec4, glm::vec4, glm::vec4);
+
+template <class T>
 struct SortItem
 {
-	int ID;
+	T data;
 	float value;
 
-	SortItem() : ID(0), value(0){}
-	SortItem(int IDInt, float valueFloat) : ID(IDInt), value(valueFloat){}
+	SortItem() : data(T()), value(0){}
+	SortItem(T dataTemp, float valueFloat) : data(dataTemp), value(valueFloat){}
 };
-
 class RandomGenerator
 {
 public:
@@ -58,10 +61,65 @@ public:
 	{
 		if (data != nullptr)
 		{
-			delete data;
+			delete[] data;
 			data = nullptr;
 		}
 	}
+
+	T& operator[](int index){
+		if (index < 0 || index >= count)
+			abort();
+		return data[index];
+	}
 };
 
-void InsertSort(SmartArray<SortItem>&);
+template<class T>
+//void InsertSort(SmartArray<SortItem<T>>&);
+void InsertSort(SmartArray<SortItem<T>>& items, bool reverse)
+{
+	int itemSize = items.count;
+
+	SortItem<T>* data = items.data;
+	if (!reverse)
+	{
+		for (int i = 1; i < itemSize; i++)
+		{
+			SortItem<T> item = data[i];
+			for (int b = 1; b <= i; b++)
+			{
+				SortItem<T>* checkItem = &(data[i - b]);
+				if (item.value < checkItem->value)
+				{
+					SortItem<T> swapper = *checkItem;
+					*checkItem = data[i - (b - 1)];
+					data[i - (b - 1)] = swapper;
+				}
+				else
+				{
+					break;
+				}
+			}
+		}
+	}
+	else
+	{
+		for (int i = 1; i < itemSize; i++)
+		{
+			SortItem<T> item = data[i];
+			for (int b = 1; b <= i; b++)
+			{
+				SortItem<T>* checkItem = &(data[i - b]);
+				if (item.value > checkItem->value)
+				{
+					SortItem<T> swapper = *checkItem;
+					*checkItem = data[i - (b - 1)];
+					data[i - (b - 1)] = swapper;
+				}
+				else
+				{
+					break;
+				}
+			}
+		}
+	}
+}
