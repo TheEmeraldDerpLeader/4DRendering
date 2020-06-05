@@ -35,7 +35,6 @@ __kernel void CrossSection(__global Mat4* modelMatrices, __global float4* modelO
 	Mat4 modelMatrix = modelMatrices[thisModelID];
 	Line tetraLines[6] = {modelLines[(thisTetraID * 6) + 0], modelLines[(thisTetraID * 6) + 1], modelLines[(thisTetraID * 6) + 2], modelLines[(thisTetraID * 6) + 3], modelLines[(thisTetraID * 6) + 4], modelLines[(thisTetraID * 6) + 5]};
 	float4 offset = *cameraOffset - modelOffsets[thisModelID];
-
 	for (int i = 0; i < 6; i++)
 	{
 		float4 posVec;
