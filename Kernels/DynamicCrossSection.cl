@@ -20,7 +20,7 @@ __kernel void DynCrossSection(__global Line* inLines, __global float4* outPoints
 	//Setting up local variables
 	int thisID = get_global_id(0);
 	Line thisLine = inLines[thisID];
-	Mat4 transformMat = *cameraMatrix;
+	Mat4 transformMat = cameraMatrix[0];
 	float4 offset = *cameraOffset;
 	thisLine.point.x -= offset.x;
 	thisLine.point.y -= offset.y;
