@@ -4,15 +4,18 @@
 #include <SFML/System.hpp>
 #include <GL/glew.h>
 
-#include "ShaderHandler.h"
-#include "RenderObjects.h"
-#include "Helpers.h"
+#include <Rendering/RenderObjects.h>
+#include <Rendering/Lighting.h>
+		 
+#include <HelpfulScripts/Helpers.h>
+#include <HelpfulScripts/Rotater.h>
+#include <HelpfulScripts/Modulo.h>
+#include <HelpfulScripts/ShaderHandler.h>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-#include "Modulo.h"
 #include <iostream>
 #include <vector>
 #include <deque>
@@ -29,6 +32,7 @@ const int screeny = 600;
 Rotater camera;
 glm::vec4 position;
 RenderManager renderManager;
+LightingManager lightingManager;
 
 glm::vec2 lastMouse(screenx / 2, screeny / 2);
 bool firstMouse = true;
@@ -53,31 +57,42 @@ Texture transTextures[transTextureCount];
 
 float debugTime = 0;
 float debugCount = 0;
-//TODO: Reverse order, edgecase nothing
+//TODO: Scene creation, saving, and loading
 
-//Later: Don't clear deques every frame, Point lighting system. Finish texture gen, split RenderObjects, make RenderingGeometry use inheritance
+//Later: DONE!
 
 int main()
 {
+
 	glm::mat4x4 perspective = glm::perspective(45.0f, (float)screenx / (float)screeny, 0.1f, 100.0f);
 
 	position = glm::vec4(0, 0, 6, 0.1f);
-	camera.RotateXW(0.5f);
+	camera.RotateXW(0.0f);
 	glm::mat4x4 derpTest = RotateMat(0, 0, 0, 0, 0, 0);
 	derpTest *= 0.5f;
 	// transformation, offset, modelID, textureID, cellCount, transparent
 	renderManager.tetraRenderables.push_back(Renderable(glm::mat4x4(1), glm::vec4(0, 0, 0, 0), 0, 0, 5,false));
 	renderManager.tetraRenderables.push_back(Renderable(glm::mat4x4(1), glm::vec4(2, 0, 0, 0), 1, 1, 5,false));
 	renderManager.tetraRenderables.push_back(Renderable(glm::mat4x4(3), glm::vec4(-5, 0, 0, -0.5f), 2, 2, 14,false));
-	//renderManager.tetraRenderables.push_back(Renderable(glm::mat4x4(1), glm::vec4(0, 0, 0, -0.5f), 2, 2, 14));
 	renderManager.hexaRenderables.push_back(Renderable(derpTest, glm::vec4(0, -2, 0, 0), 0, 3, 8,false));
-	for (int x = -5; x < 5; x+=2)
+	renderManager.hexaRenderables.push_back(Renderable(derpTest/2.0f, glm::vec4(3, 3, 3, 0), 0, 3, 8, false));
+	for (int x = -4; x < 4; x+=2)
 	{
-		for (int z = -5; z < 5; z+=2)
+		for (int z = -4; z < 4; z+=2)
 		{
-			for (int w = -5; w < 5; w+=2)
+			for (int w = -4; w < 4; w+=2)
 			{
 				renderManager.hexaRenderables.push_back(Renderable(derpTest, glm::vec4(x, -6, z, w), 0, 0, 8,true));
+			}
+		}
+	}
+	for (int x = -3; x < 3; x += 2)
+	{
+		for (int y = -3; y < 3; y += 2)
+		{
+			for (int w = -3; w < 3; w += 2)
+			{
+				renderManager.hexaRenderables.push_back(Renderable(derpTest*1.5f, glm::vec4(x+3, y, -8, w+0.5f), 0, 3, 8, false));
 			}
 		}
 	}
@@ -85,9 +100,10 @@ int main()
 	renderManager.Refresh();
 	renderManager.DynRefresh();
 	renderManager.HexaRefresh();
+	renderManager.InitializeDeques(textureCount, transTextureCount);
 
 	sf::ContextSettings settings;
-	settings.majorVersion = 3;
+	settings.majorVersion = 4;
 	settings.minorVersion = 3;
 	settings.depthBits = 24;
 	sf::RenderWindow window(sf::VideoMode(screenx,screeny), "4D Rendering", sf::Style::Default, settings);
@@ -101,11 +117,12 @@ int main()
 	glFrontFace(GL_CW);
 
 	Shader shader(vertexShader, fragmentShader);
+	lightingManager = LightingManager(&shader);
 	shader.use();
 	glGenBuffers(textureCount, VBOs);
 	glGenVertexArrays(textureCount, VAOs);
 
-	unsigned int stride = sizeof(float)*9;
+	unsigned int stride = sizeof(float)*13;
 
 	for (int i = 0; i < textureCount; i++)
 	{
@@ -117,6 +134,8 @@ int main()
 		glEnableVertexAttribArray(1);
 		glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, stride, (void*)(6 * sizeof(float))); //Texture coords
 		glEnableVertexAttribArray(2);
+		glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, stride, (void*)(9 * sizeof(float))); //Normals
+		glEnableVertexAttribArray(3);
 	}
 	glGenBuffers(1, &transVBO);
 	glGenVertexArrays(1, &transVAO);
@@ -129,7 +148,9 @@ int main()
 	glEnableVertexAttribArray(1);
 	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, stride, (void*)(6 * sizeof(float))); //Texture coords
 	glEnableVertexAttribArray(2);
-	
+	glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, stride, (void*)(9 * sizeof(float))); //Normals
+	glEnableVertexAttribArray(3);
+
 	CreateTexture(6, nullptr, 8, 8, 8, textures[0]);
 	CreateTexture(1, nullptr, 128, 128, 128, textures[1]);
 	CreateTexture(2, nullptr, 128, 128, 128, textures[2]);
@@ -138,8 +159,16 @@ int main()
 
 	unsigned int perspectiveLoc = glGetUniformLocation(shader.ID, "perspectiveMat");
 	glUniformMatrix4fv(perspectiveLoc, 1, GL_FALSE, glm::value_ptr(perspective));
-
+	lightingManager.SetAmbientLoc(std::string("ambient"));
+	lightingManager.SetDirLightLoc(std::string("dirLight.direction"));
+	lightingManager.SetPointIndexLoc(std::string("pointLights"), 0);
+	lightingManager.SetSpotIndexLoc(std::string("spotLights"), 1);
+	lightingManager.GenUBOs(0,1);
 	shader.setInt("texture0", 0);
+
+	lightingManager.pointLights.push_back(PointLight(glm::vec4(1, 2, 0, 1), 1.0f, 0.09f, 0.032f, glm::vec3(0.65f, 0.65f, 0.65f), glm::vec3(0.65f, 0.65f, 0.65f)));
+	lightingManager.spotLights.push_back(SpotLight(glm::vec4(-2, 0, 0, 0), glm::vec4(0, 0, -1, 0), 2, 18, glm::vec3(0.5f, 0.5f, 0.5f), glm::vec3(0.5f, 0.5f, 0.5f)));
+	lightingManager.sceneDirLight.SetColor(glm::vec3(0.6f, 0.6f, 0.6f));
 
 	window.setMouseCursorVisible(false);
 	window.setMouseCursorGrabbed(true);
@@ -222,11 +251,16 @@ int main()
 			shader.use();
 			glActiveTexture(GL_TEXTURE0);
 
-			renderManager.ClearDeques(textureCount, transTextureCount);
+			renderManager.ResetIndexes();
+			camera.InvertedCopyToMatrixBuffer();
 			renderManager.ModelGenerate(camera, position);
 			renderManager.DynamicGenerate(camera, position);
 			renderManager.HexaModelGenerate(camera, position);
 			renderManager.CopyToBuffer(VBOs, bufferSizes);
+
+			lightingManager.AmbientToShader();
+			lightingManager.DirLightToShader(camera.GetInvertedTransform());
+			lightingManager.TranferToBuffers(camera.GetInvertedTransform(), position);
 			errorCode = glGetError();
 			for (int i = 0; i < textureCount; i++)
 			{
@@ -791,7 +825,7 @@ void CreateTexture(int presetNumber, unsigned char* data, unsigned int xDim, uns
 
 void ProcessInput(sf::Window* window)
 {
-	glm::mat4x4 rotation = glm::inverse(camera.GetTransform());
+	glm::mat4x4 rotation = camera.GetTransform();
 	//Window input
 	if (sf::Keyboard::isKeyPressed(sf::Keyboard::L) && cursorLockWait == 0)
 	{
@@ -821,7 +855,7 @@ void ProcessInput(sf::Window* window)
 		//Movement Input
 		if (sf::Keyboard::isKeyPressed(sf::Keyboard::LShift))
 		{
-			moveSpeed = 2.0f;
+			moveSpeed = 2.5f;
 		}
 		else if (sf::Keyboard::isKeyPressed(sf::Keyboard::RShift))
 		{
@@ -870,6 +904,16 @@ void ProcessInput(sf::Window* window)
 		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Q))
 		{
 			position += rotation * glm::vec4(0, -deltaTime * moveSpeed, 0, 0);
+		}
+		if (sf::Keyboard::isKeyPressed(sf::Keyboard::R))
+		{
+			lightingManager.spotLights[0].position = position;
+			lightingManager.spotLights[0].direction = camera.GetTransform()*glm::vec4(0, 0, -1, 0);
+		}
+		if (sf::Keyboard::isKeyPressed(sf::Keyboard::F))
+		{
+			lightingManager.pointLights[0].position = position + glm::vec4(0, -0.5f, 0, 0);
+			renderManager.hexaRenderables[1].offset = position + glm::vec4(0, -0.5f, 0, 0);
 		}
 		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Num3))
 		{

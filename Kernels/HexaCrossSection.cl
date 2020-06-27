@@ -21,23 +21,39 @@ typedef struct
 // 12 lines per hexa are made and crosected to each be put into their own work items.
 
 __kernel void HexaCrossSection(__global Mat4* modelMatrices, __global float4* modelOffsets, //1 per model
-	__global int* modelIDs, __global int* hexaIDs, //1 per hexa
+	__global int* modelIDs, __global int* hexaIDs, __global float4* outNormals, //1 per hexa
 	__global float4* outPoints, __global char* outStates, __global float3* outTexCoords, //12 per hexa
 	__constant Mat4* cameraMatrix, __constant float4* cameraOffset, //1
-	__constant Line* modelLines)
+	__constant Line* modelLines, __constant float4* modelNormals)
 
 { //glm matrices are stored by down rows then right columns
 	//Setting up local variables
 	int thisID = get_global_id(0);
 	int thisModelID = modelIDs[thisID];
 	int thisHexaID = hexaIDs[thisID];
-	Mat4 rotationMatrix = *cameraMatrix;
-	Mat4 modelMatrix = modelMatrices[thisModelID];
+	Mat4 rotationMatrix = cameraMatrix[0];
+	Mat4 normalRotationMatrix = cameraMatrix[1];
+	Mat4 modelMatrix = modelMatrices[thisModelID*2];
+	Mat4 normalMatrix = modelMatrices[(thisModelID*2)+1];
 	Line hexaLines[12] = {modelLines[(thisHexaID * 12) + 0], modelLines[(thisHexaID * 12) + 1], modelLines[(thisHexaID * 12) + 2], modelLines[(thisHexaID * 12) + 3],
 	modelLines[(thisHexaID * 12) + 4], modelLines[(thisHexaID * 12) + 5], modelLines[(thisHexaID * 12) + 6], modelLines[(thisHexaID * 12) + 7],
 	modelLines[(thisHexaID * 12) + 8], modelLines[(thisHexaID * 12) + 9], modelLines[(thisHexaID * 12) + 10], modelLines[(thisHexaID * 12) + 11]};
-	float4 offset = *cameraOffset - modelOffsets[thisModelID];
+	float4 thisNormal = modelNormals[thisHexaID];
 
+	//Normal transformation
+	float4 holdVec;
+	holdVec.x = (thisNormal.x * normalMatrix.col1.x) + (thisNormal.y * normalMatrix.col2.x) + (thisNormal.z * normalMatrix.col3.x) + (thisNormal.w * normalMatrix.col4.x);
+	holdVec.y = (thisNormal.x * normalMatrix.col1.y) + (thisNormal.y * normalMatrix.col2.y) + (thisNormal.z * normalMatrix.col3.y) + (thisNormal.w * normalMatrix.col4.y);
+	holdVec.z = (thisNormal.x * normalMatrix.col1.z) + (thisNormal.y * normalMatrix.col2.z) + (thisNormal.z * normalMatrix.col3.z) + (thisNormal.w * normalMatrix.col4.z);
+	holdVec.w = (thisNormal.x * normalMatrix.col1.w) + (thisNormal.y * normalMatrix.col2.w) + (thisNormal.z * normalMatrix.col3.w) + (thisNormal.w * normalMatrix.col4.w);
+	thisNormal = holdVec;
+	holdVec.x = (thisNormal.x * normalRotationMatrix.col1.x) + (thisNormal.y * normalRotationMatrix.col2.x) + (thisNormal.z * normalRotationMatrix.col3.x) + (thisNormal.w * normalRotationMatrix.col4.x);
+	holdVec.y = (thisNormal.x * normalRotationMatrix.col1.y) + (thisNormal.y * normalRotationMatrix.col2.y) + (thisNormal.z * normalRotationMatrix.col3.y) + (thisNormal.w * normalRotationMatrix.col4.y);
+	holdVec.z = (thisNormal.x * normalRotationMatrix.col1.z) + (thisNormal.y * normalRotationMatrix.col2.z) + (thisNormal.z * normalRotationMatrix.col3.z) + (thisNormal.w * normalRotationMatrix.col4.z);
+	holdVec.w = (thisNormal.x * normalRotationMatrix.col1.w) + (thisNormal.y * normalRotationMatrix.col2.w) + (thisNormal.z * normalRotationMatrix.col3.w) + (thisNormal.w * normalRotationMatrix.col4.w);
+	outNormals[thisID] = holdVec;
+
+	float4 offset = *cameraOffset - modelOffsets[thisModelID];
 	for (int i = 0; i < 12; i++)
 	{
 		float4 posVec;
