@@ -326,6 +326,39 @@ RenderManager::RenderManager()
 	delete modelNormals;
 }
 
+void RenderManager::SetupModelBuffers()
+{
+	Line* modelLines = new Line[tetraModels.size() * 6];
+	glm::vec4* modelNormals = new glm::vec4[tetraModels.size()];
+	for (int i = 0; i < tetraModels.size(); i++)
+	{
+		for (int l = 0; l < 6; l++)
+		{
+			modelLines[(i * 6) + l] = tetraModels[i].lines[l];
+		}
+		modelNormals[i] = tetraNormals[i];
+	}
+	tetraModelBuffer = cl::Buffer(crossSection.context, CL_MEM_HOST_WRITE_ONLY | CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(Tetrahedron)*tetraModels.size(), modelLines);
+	modelNormalBuffer = cl::Buffer(crossSection.context, CL_MEM_HOST_WRITE_ONLY | CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(glm::vec4)*tetraModels.size(), modelNormals);
+	delete modelLines;
+	delete modelNormals;
+
+	modelLines = new Line[hexaModels.size() * 12];
+	modelNormals = new glm::vec4[hexaModels.size()];
+	for (int i = 0; i < hexaModels.size(); i++)
+	{
+		for (int l = 0; l < 12; l++)
+		{
+			modelLines[(i * 12) + l] = hexaModels[i].lines[l];
+		}
+		modelNormals[i] = hexaNormals[i];
+	}
+	hexaModelBuffer = cl::Buffer(crossSection.context, CL_MEM_HOST_WRITE_ONLY | CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(Hexahedron)*hexaModels.size(), modelLines);
+	hexaModelNormalBuffer = cl::Buffer(crossSection.context, CL_MEM_HOST_WRITE_ONLY | CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(glm::vec4)*hexaModels.size(), modelNormals);
+	delete modelLines;
+	delete modelNormals;
+}
+
 void RenderManager::ResetIndexes()
 {
 	for (int i = 0; i < textureCount; i++)

@@ -6,6 +6,7 @@
 
 #include <Rendering/RenderObjects.h>
 #include <Rendering/Lighting.h>
+#include <SceneManagement/SceneManaging.h>
 		 
 #include <HelpfulScripts/Helpers.h>
 #include <HelpfulScripts/Rotater.h>
@@ -33,6 +34,7 @@ Rotater camera;
 glm::vec4 position;
 RenderManager renderManager;
 LightingManager lightingManager;
+SceneManager sceneManager;
 
 glm::vec2 lastMouse(screenx / 2, screeny / 2);
 bool firstMouse = true;
@@ -57,7 +59,7 @@ Texture transTextures[transTextureCount];
 
 float debugTime = 0;
 float debugCount = 0;
-//TODO: Scene creation, saving, and loading
+//TODO: UI to add/remove objects and lights, UI to save and load specific files.
 
 //Later: DONE!
 
@@ -65,32 +67,32 @@ int main()
 {
 
 	glm::mat4x4 perspective = glm::perspective(45.0f, (float)screenx / (float)screeny, 0.1f, 100.0f);
-
+	
 	position = glm::vec4(0, 0, 6, 0.1f);
 	camera.RotateXW(0.0f);
 	glm::mat4x4 derpTest = RotateMat(0, 0, 0, 0, 0, 0);
 	derpTest *= 0.5f;
 	// transformation, offset, modelID, textureID, cellCount, transparent
-	renderManager.tetraRenderables.push_back(Renderable(glm::mat4x4(1), glm::vec4(0, 0, 0, 0), 0, 0, 5,false));
+	renderManager.tetraRenderables.push_back(Renderable(glm::mat4x4(1)*Rotater(20,20,20,20,20,20).GetTransform(), glm::vec4(0, 0, 0, -0.2f), 0, 0, 5,false));
 	renderManager.tetraRenderables.push_back(Renderable(glm::mat4x4(1), glm::vec4(2, 0, 0, 0), 1, 1, 5,false));
 	renderManager.tetraRenderables.push_back(Renderable(glm::mat4x4(3), glm::vec4(-5, 0, 0, -0.5f), 2, 2, 14,false));
 	renderManager.hexaRenderables.push_back(Renderable(derpTest, glm::vec4(0, -2, 0, 0), 0, 3, 8,false));
 	renderManager.hexaRenderables.push_back(Renderable(derpTest/2.0f, glm::vec4(3, 3, 3, 0), 0, 3, 8, false));
-	for (int x = -4; x < 4; x+=2)
+	for (int x = -2; x < 2; x+=2)
 	{
-		for (int z = -4; z < 4; z+=2)
+		for (int z = -2; z < 2; z+=2)
 		{
-			for (int w = -4; w < 4; w+=2)
+			for (int w = -2; w < 2; w+=2)
 			{
 				renderManager.hexaRenderables.push_back(Renderable(derpTest, glm::vec4(x, -6, z, w), 0, 0, 8,true));
 			}
 		}
 	}
-	for (int x = -3; x < 3; x += 2)
+	for (int x = -1; x < 1; x += 2)
 	{
-		for (int y = -3; y < 3; y += 2)
+		for (int y = -1; y < 1; y += 2)
 		{
-			for (int w = -3; w < 3; w += 2)
+			for (int w = -1; w < 1; w += 2)
 			{
 				renderManager.hexaRenderables.push_back(Renderable(derpTest*1.5f, glm::vec4(x+3, y, -8, w+0.5f), 0, 3, 8, false));
 			}
@@ -118,6 +120,7 @@ int main()
 
 	Shader shader(vertexShader, fragmentShader);
 	lightingManager = LightingManager(&shader);
+	sceneManager = SceneManager();
 	shader.use();
 	glGenBuffers(textureCount, VBOs);
 	glGenVertexArrays(textureCount, VAOs);
@@ -914,6 +917,23 @@ void ProcessInput(sf::Window* window)
 		{
 			lightingManager.pointLights[0].position = position + glm::vec4(0, -0.5f, 0, 0);
 			renderManager.hexaRenderables[1].offset = position + glm::vec4(0, -0.5f, 0, 0);
+		}
+		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Y))
+		{
+			sceneManager.SaveScene(renderManager, lightingManager, camera, position, std::string("C:\\Users\\Chris\\Desktop\\Game Design folder o' folders\\C++ Programs\\4DRenderAttempt\\4DRenderAttempt\\Assets\\Scenes\\Scene1.fds"));
+		}
+		if (sf::Keyboard::isKeyPressed(sf::Keyboard::H))
+		{
+			sceneManager.LoadScene(renderManager, lightingManager, camera, position, std::string("C:\\Users\\Chris\\Desktop\\Game Design folder o' folders\\C++ Programs\\4DRenderAttempt\\4DRenderAttempt\\Assets\\Scenes\\Scene1.fds"));
+		}
+		if (sf::Keyboard::isKeyPressed(sf::Keyboard::B))
+		{
+			std::vector<std::string> holdVec;
+			sceneManager.ReadDirectory("C:\\Users\\Chris\\Desktop\\Game Design folder o' folders\\C++ Programs\\4DRenderAttempt\\4DRenderAttempt\\Assets\\Scenes", holdVec);
+			for (int i = 0; i < holdVec.size(); i++)
+			{
+				std::cout << holdVec[i] << '\n';
+			}
 		}
 		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Num3))
 		{

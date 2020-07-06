@@ -100,6 +100,8 @@ public:
 
 	RenderManager();
 
+	void SetupModelBuffers();
+
 	void ResetIndexes();
 	void InitializeDeques(unsigned int, unsigned int);
 	void ModelGenerate(Rotater&, glm::vec4);
