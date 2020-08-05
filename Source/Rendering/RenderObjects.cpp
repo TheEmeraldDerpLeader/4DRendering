@@ -226,8 +226,8 @@ RenderManager::RenderManager()
 	}
 	tetraModelBuffer = cl::Buffer(crossSection.context, CL_MEM_HOST_WRITE_ONLY | CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(Tetrahedron)*tetraModels.size(), modelLines);
 	modelNormalBuffer = cl::Buffer(crossSection.context, CL_MEM_HOST_WRITE_ONLY | CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(glm::vec4)*tetraModels.size(), modelNormals);
-	delete modelLines;
-	delete modelNormals;
+	delete[] modelLines;
+	delete[] modelNormals;
 
 	hexaModels.resize(8);
 	hexaModelStarts.resize(1);
@@ -322,8 +322,8 @@ RenderManager::RenderManager()
 	}
 	hexaModelBuffer = cl::Buffer(crossSection.context, CL_MEM_HOST_WRITE_ONLY | CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(Hexahedron)*hexaModels.size(), modelLines);
 	hexaModelNormalBuffer = cl::Buffer(crossSection.context, CL_MEM_HOST_WRITE_ONLY | CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(glm::vec4)*hexaModels.size(), modelNormals);
-	delete modelLines;
-	delete modelNormals;
+	delete[] modelLines;
+	delete[] modelNormals;
 }
 
 void RenderManager::SetupModelBuffers()
@@ -340,8 +340,8 @@ void RenderManager::SetupModelBuffers()
 	}
 	tetraModelBuffer = cl::Buffer(crossSection.context, CL_MEM_HOST_WRITE_ONLY | CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(Tetrahedron)*tetraModels.size(), modelLines);
 	modelNormalBuffer = cl::Buffer(crossSection.context, CL_MEM_HOST_WRITE_ONLY | CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(glm::vec4)*tetraModels.size(), modelNormals);
-	delete modelLines;
-	delete modelNormals;
+	delete[] modelLines;
+	delete[] modelNormals;
 
 	modelLines = new Line[hexaModels.size() * 12];
 	modelNormals = new glm::vec4[hexaModels.size()];
@@ -355,8 +355,8 @@ void RenderManager::SetupModelBuffers()
 	}
 	hexaModelBuffer = cl::Buffer(crossSection.context, CL_MEM_HOST_WRITE_ONLY | CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(Hexahedron)*hexaModels.size(), modelLines);
 	hexaModelNormalBuffer = cl::Buffer(crossSection.context, CL_MEM_HOST_WRITE_ONLY | CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(glm::vec4)*hexaModels.size(), modelNormals);
-	delete modelLines;
-	delete modelNormals;
+	delete[] modelLines;
+	delete[] modelNormals;
 }
 
 void RenderManager::ResetIndexes()
@@ -390,9 +390,9 @@ void RenderManager::InitializeDeques(unsigned int textureCountInt, unsigned int 
 	if (transNormalData != nullptr)
 		delete[] transNormalData;
 	if (vertexIndex != nullptr)
-		delete vertexIndex;
+		delete[] vertexIndex;
 	if (transVertexIndex != nullptr)
-		delete transVertexIndex;
+		delete[] transVertexIndex;
 	textureCount = textureCountInt;
 	transTextureCount = transTextureCountInt;
 	vertexPos = new std::deque<glm::vec4>[textureCount];
@@ -570,10 +570,10 @@ void RenderManager::Refresh()
 	if (modelSize > 0)
 	{
 		if (modelMatrices != nullptr)
-			delete modelMatrices;
+			delete[] modelMatrices;
 		modelMatrices = new glm::mat4x4[modelSize*2];
 		if (modelOffsets != nullptr)
-			delete modelOffsets;
+			delete[] modelOffsets;
 		modelOffsets = new glm::vec4[modelSize];
 		int tetraSize = 0;
 		for (int i = 0; i < modelSize; i++)
@@ -583,22 +583,22 @@ void RenderManager::Refresh()
 		int lineSize = tetraSize * 6;
 
 		if (modelIDs != nullptr)
-			delete modelIDs;
+			delete[] modelIDs;
 		modelIDs = new int[tetraSize];
 		if (tetraIDs != nullptr)
-			delete tetraIDs;
+			delete[] tetraIDs;
 		tetraIDs = new int[tetraSize];
 		if (points != nullptr)
-			delete points;
+			delete[] points;
 		points = new glm::vec4[lineSize];
 		if (texCoords != nullptr)
-			delete texCoords;
+			delete[] texCoords;
 		texCoords = new glm::vec4[lineSize];
 		if (outNormals != nullptr)
-			delete outNormals;
+			delete[] outNormals;
 		outNormals = new glm::vec4[tetraSize];
 		if (tetraStates != nullptr)
-			delete tetraStates;
+			delete[] tetraStates;
 		tetraStates = new char[tetraSize];
 	}
 }
@@ -703,16 +703,16 @@ void RenderManager::DynRefresh()
 	{
 		int lineSize = dynamicTetras.size() * 6;
 		if (dynLineData != nullptr)
-			delete dynLineData;
+			delete[] dynLineData;
 		dynLineData = new Line[lineSize];
 		if (dynPoints != nullptr)
-			delete dynPoints;
+			delete[] dynPoints;
 		dynPoints = new glm::vec4[lineSize];
 		if (dynTexCoords != nullptr)
-			delete dynTexCoords;
+			delete[] dynTexCoords;
 		dynTexCoords = new glm::vec4[lineSize];
 		if (dynTetraStates != nullptr)
-			delete dynTetraStates;
+			delete[] dynTetraStates;
 		dynTetraStates = new char[tetraSize];
 		for (int i = 0; i < tetraSize; i++)
 		{
@@ -888,10 +888,10 @@ void RenderManager::HexaRefresh()
 	if (modelSize > 0)
 	{
 		if (hexaModelMatrices != nullptr)
-			delete hexaModelMatrices;
+			delete[] hexaModelMatrices;
 		hexaModelMatrices = new glm::mat4x4[modelSize*2];
 		if (hexaModelOffsets != nullptr)
-			delete hexaModelOffsets;
+			delete[] hexaModelOffsets;
 		hexaModelOffsets = new glm::vec4[modelSize];
 		int hexaSize = 0;
 		for (int i = 0; i < modelSize; i++)
@@ -901,22 +901,22 @@ void RenderManager::HexaRefresh()
 		int lineSize = hexaSize * 12;
 
 		if (hexaModelIDs != nullptr)
-			delete hexaModelIDs;
+			delete[] hexaModelIDs;
 		hexaModelIDs = new int[hexaSize];
 		if (hexaIDs != nullptr)
-			delete hexaIDs;
+			delete[] hexaIDs;
 		hexaIDs = new int[hexaSize];
 		if (hexaPoints != nullptr)
-			delete hexaPoints;
+			delete[] hexaPoints;
 		hexaPoints = new glm::vec4[lineSize];
 		if (hexaTexCoords != nullptr)
-			delete hexaTexCoords;
+			delete[] hexaTexCoords;
 		hexaTexCoords = new glm::vec4[lineSize];
 		if (hexaOutNormals != nullptr)
-			delete hexaOutNormals;
+			delete[] hexaOutNormals;
 		hexaOutNormals = new glm::vec4[lineSize];
 		if (hexaStates != nullptr)
-			delete hexaStates;
+			delete[] hexaStates;
 		hexaStates = new char[hexaSize];
 	}
 }
@@ -955,7 +955,7 @@ void RenderManager::CopyToBuffer(unsigned int* VBOaddress, unsigned int* bufferS
 		glBindBuffer(GL_ARRAY_BUFFER, VBOaddress[i]);
 		glBufferData(GL_ARRAY_BUFFER, 13 * sizeof(float) * vertexIndex[i], vboData, GL_DYNAMIC_DRAW);
 	}
-	delete vboData;
+	delete[] vboData;
 }
 void RenderManager::TransCopyToBuffer(std::vector<unsigned int>& textureIDs, std::vector<unsigned int>& textureRunLengths, unsigned int* VBOAddress)
 {
@@ -1031,7 +1031,7 @@ void RenderManager::TransCopyToBuffer(std::vector<unsigned int>& textureIDs, std
 	textureRunLengths[index] = currentTexRun-1;
 	glBindBuffer(GL_ARRAY_BUFFER, *VBOAddress);
 	glBufferData(GL_ARRAY_BUFFER, 39 * sizeof(float) * triangleCount, vboData, GL_DYNAMIC_DRAW);
-	delete vboData;
+	delete[] vboData;
 }
 //Cube
 /*

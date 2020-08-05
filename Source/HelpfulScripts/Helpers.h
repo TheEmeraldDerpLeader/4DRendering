@@ -84,6 +84,71 @@ public:
 	}
 };
 
+template <class T>
+class Unique
+{
+public:
+	T* data;
+	Unique();
+	Unique(T&);
+	Unique(T*);
+	~Unique();
+
+	void Reassign(T*); //Deletes old pointer
+	void Swap(Unique<T>&);
+
+	void operator=(Unique<T>&); //Doesn't delete old pointer
+};
+
+#pragma region Unique
+template<class T>
+inline Unique<T>::Unique()
+{
+	data = nullptr;
+}
+
+template<class T>
+inline Unique<T>::Unique(T& temp)
+{
+	data = new T(temp);
+}
+
+template<class T>
+inline Unique<T>::Unique(T* temp)
+{
+	data = temp;
+}
+
+template<class T>
+inline Unique<T>::~Unique()
+{
+	if (data != nullptr)
+		delete data;
+}
+
+template<class T>
+inline void Unique<T>::Reassign(T* temp) //Deletes old pointer
+{
+	if (data != nullptr)
+		delete data;
+	data = temp;
+}
+
+template<class T>
+inline void Unique<T>::Swap(Unique<T>& unique)
+{
+	T* hold = data;
+	data = unique.data;
+	unique.data = hold;
+}
+
+template<class T>
+inline void Unique<T>::operator=(Unique<T>& unique) //Doesn't delete old pointer
+{
+	data = unique.data;
+}
+#pragma endregion
+
 template<class T>
 //void InsertSort(SmartArray<SortItem<T>>&);
 void InsertSort(SmartArray<SortItem<T>>& items, bool reverse)

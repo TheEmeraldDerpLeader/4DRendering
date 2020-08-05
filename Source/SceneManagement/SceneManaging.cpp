@@ -2,7 +2,6 @@
 
 SceneManager::SceneManager()
 {
-
 }
 
 //8 byte identifier, camera position, camera rotation (euler angle array), tetraModel count, (tetra count, tetras, normals), hexaModel count, (hexa count, hexas, normals),\
@@ -23,6 +22,9 @@ void SceneManager::SaveScene(RenderManager& renderManager, LightingManager& ligh
 		stream.put('D');
 		stream.put('E');
 		stream.put('R');
+		int version[4] = {0,0,0,0};
+		byteTransfer = (char*)&version;
+		stream.write(byteTransfer,16);
 		if (stream.fail())
 		{
 			stream.close();
@@ -98,7 +100,7 @@ void SceneManager::SaveScene(RenderManager& renderManager, LightingManager& ligh
 		}
 		byteTransfer = (char*)renderables;
 		stream.write(byteTransfer, hexaRenderableCount * sizeof(Renderable));
-		delete renderables;
+		delete[] renderables;
 
 		byteTransfer = (char*)&lightingManager.ambient;
 		stream.write(byteTransfer, sizeof(glm::vec3));
@@ -136,18 +138,17 @@ void SceneManager::SaveScene(RenderManager& renderManager, LightingManager& ligh
 
 void SceneManager::LoadScene(RenderManager& renderManager, LightingManager& lightingManager, Rotater& camera, glm::vec4& position, std::string fileName)
 {
-	renderManager.tetraModels.clear();
-	renderManager.tetraModelStarts.clear();
-	renderManager.tetraNormals.clear();
-	renderManager.hexaModels.clear();
-	renderManager.hexaModelStarts.clear();
-	renderManager.hexaNormals.clear();
-	renderManager.tetraRenderables.clear();
-	renderManager.hexaRenderables.clear();
-
 	std::ifstream stream(fileName, std::ios::in | std::ios::binary);
 	if (stream.good()) //"Scene1.fds"
 	{
+		renderManager.tetraModels.clear();
+		renderManager.tetraModelStarts.clear();
+		renderManager.tetraNormals.clear();
+		renderManager.hexaModels.clear();
+		renderManager.hexaModelStarts.clear();
+		renderManager.hexaNormals.clear();
+		renderManager.tetraRenderables.clear();
+		renderManager.hexaRenderables.clear();
 		char inputBuffer[1024];
 
 		bool invalidCheck = false;
@@ -156,6 +157,18 @@ void SceneManager::LoadScene(RenderManager& renderManager, LightingManager& ligh
 		{
 			if (inputBuffer[i] != "4DRENDER"[i])
 				invalidCheck = true;
+		}
+		stream.read(inputBuffer, 16);
+		int version[4];
+		version[0] = ((int*)inputBuffer)[0];
+		version[1] = ((int*)inputBuffer)[1];
+		version[2] = ((int*)inputBuffer)[2];
+		version[3] = ((int*)inputBuffer)[3];
+		if (version[0] != 0 || version[1] != 0 || version[2] != 0 || version[3] != 0)
+		{
+			stream.close();
+			std::cout << "Unsupported version: " << version[0] << "." << version[1] << "." << version[2] << "." << version[3] << "\n File: " << fileName << '\n';
+			abort();
 		}
 		if (invalidCheck)
 		{
@@ -226,7 +239,6 @@ void SceneManager::LoadScene(RenderManager& renderManager, LightingManager& ligh
 				renderManager.hexaNormals.push_back(*(glm::vec4*)inputBuffer);
 			}
 		}
-		renderManager.SetupModelBuffers();
 		stream.read(inputBuffer, 4);
 		int tetraRenderableCount = *(int*)inputBuffer;
 		for (int i = 0; i < tetraRenderableCount; i++)
@@ -278,6 +290,10 @@ void SceneManager::LoadScene(RenderManager& renderManager, LightingManager& ligh
 			stream.read(inputBuffer, sizeof(SpotLight));
 			lightingManager.spotLights[i] = *(SpotLight*)inputBuffer;
 		}
+		renderManager.SetupModelBuffers();
+		renderManager.Refresh();
+		renderManager.DynRefresh();
+		renderManager.HexaRefresh();
 	}
 	else
 	{
@@ -293,17 +309,67 @@ void SceneManager::LoadScene(RenderManager& renderManager, LightingManager& ligh
 	stream.close();
 }
 
-void SceneManager::ReadDirectory(std::string name, std::vector<std::string>& filesFound)
+void SceneManager::ReadDirectory(std::string name, unsigned int setting) //1 for directories only, 2 for .fds only
 {
-	std::string pattern(name);
-	pattern.append("\\*");
+	directoryFiles.clear();
+	name.append("\\*");
 	WIN32_FIND_DATA data;
 	HANDLE hFind;
-	if ((hFind = FindFirstFile(pattern.c_str(), &data)) != INVALID_HANDLE_VALUE)
+	if ((hFind = FindFirstFile(name.c_str(), &data)) != INVALID_HANDLE_VALUE)
 	{
 		do
 		{
-			filesFound.push_back(data.cFileName);
+			std::string refString(data.cFileName);
+			switch (setting)
+			{
+			case 1:
+			{
+				fs::path path(name.substr(0, name.size() - 1) + refString); // Constructing the path from a string is possible.
+				std::error_code ec; // For using the non-throwing overloads of functions below.
+				if (fs::is_directory(path, ec))
+				{
+					if (refString != "." && refString != "..")
+						directoryFiles.push_back(refString);
+				}
+				if (ec) // Optional handling of possible errors.
+				{
+					std::cerr << "Error in is_directory: " << ec.message();
+				}
+				if (fs::is_regular_file(path, ec))
+				{
+					// Process a regular file.
+				}
+				if (ec) // Optional handling of possible errors. Usage of the same ec object works since fs functions are calling ec.clear() if no errors occur.
+				{
+					std::cerr << "Error in is_regular_file: " << ec.message();
+				}
+
+				//std::ifstream stream(name.substr(0, name.size() - 1) + refString, std::ios::in | std::ios::binary);
+				//if (stream.good())
+				//	stream.close();
+				//else
+				//{
+				//	stream.close();
+				//	if (refString != "." && refString != "..")
+				//		directoryFiles.push_back(refString);
+				//}
+				break;
+			}
+			case 2:
+			{
+				if (refString.size()>3)
+					if (refString != "." && refString != ".." && refString.substr(refString.size()-4,4) == ".fds")
+						directoryFiles.push_back(refString);
+				break;
+			}
+			default:
+			{
+				if (refString != "." && refString != "..")
+					directoryFiles.push_back(refString);
+				break;
+			}
+			}
+
 		} while (FindNextFile(hFind, &data) != 0);
 		FindClose(hFind);
 	}

@@ -1,215 +1,45 @@
-#include <SFML/Main.hpp>
-#include <SFML/Window.hpp>
-#include <SFML/Graphics.hpp>
-#include <SFML/System.hpp>
-#include <GL/glew.h>
-
-#include <Rendering/RenderObjects.h>
-#include <Rendering/Lighting.h>
-#include <SceneManagement/SceneManaging.h>
-		 
-#include <HelpfulScripts/Helpers.h>
-#include <HelpfulScripts/Rotater.h>
-#include <HelpfulScripts/Modulo.h>
-#include <HelpfulScripts/ShaderHandler.h>
-
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
-
-#include <iostream>
-#include <vector>
-#include <deque>
+#include <ProgramGlobals.h>
+#include <SceneManagement/FileExplorer.h>
 
 void CreateTexture(int, unsigned char*, unsigned int, unsigned int, unsigned int, Texture&);
-void ProcessInput(sf::Window*);
+void ProcessGameInput(sf::RenderWindow&, RenderManager&, LightingManager&, SceneManager&, FileExplorer&);
 
-char vertexShader[] = "Assets\\Shaders\\VertexShader.glsl";
-char fragmentShader[] = "Assets\\Shaders\\FragmentShader.glsl";
+void SetUpRenderManager(RenderManager&);
+void SetUpOpenGL(glm::mat4x4&, sf::RenderWindow&, Shader&);
+void SetUpLighting(LightingManager&);
+void SetUpUI(GUIManager&, FileExplorer&);
 
-const int screenx = 800;
-const int screeny = 600;
+void UpdateGameUI();
 
-Rotater camera;
-glm::vec4 position;
-RenderManager renderManager;
-LightingManager lightingManager;
-SceneManager sceneManager;
-
-glm::vec2 lastMouse(screenx / 2, screeny / 2);
-bool firstMouse = true;
-bool cursorLock = true;
-bool terminated = false;
-
-const unsigned int textureCount = 4;
-const unsigned int transTextureCount = 1;
-unsigned int VBOs[textureCount];
-unsigned int VAOs[textureCount];
-unsigned int transVBO;
-unsigned int transVAO;
-unsigned int errorCode;
-
-float moveSpeed = 1.0f;
-float rotationSpeed = 45.0f;
-float deltaTime;
-float cursorLockWait = 0.0f;
-
-Texture textures[textureCount];
-Texture transTextures[transTextureCount];
-
-float debugTime = 0;
-float debugCount = 0;
-//TODO: UI to add/remove objects and lights, UI to save and load specific files.
-
-//Later: DONE!
+void RenderGame(sf::RenderWindow&, Shader&, RenderManager&, LightingManager&, unsigned int*, std::vector<unsigned int>&, std::vector<unsigned int>&, GUIManager&);
 
 int main()
 {
+	RenderManager renderManager;
+	SceneManager sceneManager;
+
+	char vertexShader[] = "Assets\\Shaders\\VertexShader.glsl";
+	char fragmentShader[] = "Assets\\Shaders\\FragmentShader.glsl";
 
 	glm::mat4x4 perspective = glm::perspective(45.0f, (float)screenx / (float)screeny, 0.1f, 100.0f);
-	
-	position = glm::vec4(0, 0, 6, 0.1f);
-	camera.RotateXW(0.0f);
-	glm::mat4x4 derpTest = RotateMat(0, 0, 0, 0, 0, 0);
-	derpTest *= 0.5f;
-	// transformation, offset, modelID, textureID, cellCount, transparent
-	renderManager.tetraRenderables.push_back(Renderable(glm::mat4x4(1)*Rotater(20,20,20,20,20,20).GetTransform(), glm::vec4(0, 0, 0, -0.2f), 0, 0, 5,false));
-	renderManager.tetraRenderables.push_back(Renderable(glm::mat4x4(1), glm::vec4(2, 0, 0, 0), 1, 1, 5,false));
-	renderManager.tetraRenderables.push_back(Renderable(glm::mat4x4(3), glm::vec4(-5, 0, 0, -0.5f), 2, 2, 14,false));
-	renderManager.hexaRenderables.push_back(Renderable(derpTest, glm::vec4(0, -2, 0, 0), 0, 3, 8,false));
-	renderManager.hexaRenderables.push_back(Renderable(derpTest/2.0f, glm::vec4(3, 3, 3, 0), 0, 3, 8, false));
-	for (int x = -2; x < 2; x+=2)
-	{
-		for (int z = -2; z < 2; z+=2)
-		{
-			for (int w = -2; w < 2; w+=2)
-			{
-				renderManager.hexaRenderables.push_back(Renderable(derpTest, glm::vec4(x, -6, z, w), 0, 0, 8,true));
-			}
-		}
-	}
-	for (int x = -1; x < 1; x += 2)
-	{
-		for (int y = -1; y < 1; y += 2)
-		{
-			for (int w = -1; w < 1; w += 2)
-			{
-				renderManager.hexaRenderables.push_back(Renderable(derpTest*1.5f, glm::vec4(x+3, y, -8, w+0.5f), 0, 3, 8, false));
-			}
-		}
-	}
-	
-	renderManager.Refresh();
-	renderManager.DynRefresh();
-	renderManager.HexaRefresh();
-	renderManager.InitializeDeques(textureCount, transTextureCount);
+
+	SetUpRenderManager(renderManager);
 
 	sf::ContextSettings settings;
 	settings.majorVersion = 4;
 	settings.minorVersion = 3;
 	settings.depthBits = 24;
-	sf::RenderWindow window(sf::VideoMode(screenx,screeny), "4D Rendering", sf::Style::Default, settings);
-	//window.setVerticalSyncEnabled(true);
+	sf::RenderWindow window(sf::VideoMode(screenx, screeny), "4D Rendering", sf::Style::Default, settings);
 	glewInit();
-
-	glEnable(GL_DEPTH_TEST);
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	//glEnable(GL_CULL_FACE);
-	glFrontFace(GL_CW);
-
 	Shader shader(vertexShader, fragmentShader);
-	lightingManager = LightingManager(&shader);
-	sceneManager = SceneManager();
-	shader.use();
-	glGenBuffers(textureCount, VBOs);
-	glGenVertexArrays(textureCount, VAOs);
+	SetUpOpenGL(perspective, window, shader);
 
-	unsigned int stride = sizeof(float)*13;
+	LightingManager lightingManager(&shader);
+	SetUpLighting(lightingManager);
 
-	for (int i = 0; i < textureCount; i++)
-	{
-		glBindVertexArray(VAOs[i]);
-		glBindBuffer(GL_ARRAY_BUFFER, VBOs[i]);
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride, (void*)0); //Position
-		glEnableVertexAttribArray(0);
-		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, stride, (void*)(3 * sizeof(float))); //Color
-		glEnableVertexAttribArray(1);
-		glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, stride, (void*)(6 * sizeof(float))); //Texture coords
-		glEnableVertexAttribArray(2);
-		glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, stride, (void*)(9 * sizeof(float))); //Normals
-		glEnableVertexAttribArray(3);
-	}
-	glGenBuffers(1, &transVBO);
-	glGenVertexArrays(1, &transVAO);
-
-	glBindVertexArray(transVAO);
-	glBindBuffer(GL_ARRAY_BUFFER, transVBO);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride, (void*)0); //Position
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, stride, (void*)(3 * sizeof(float))); //Color
-	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, stride, (void*)(6 * sizeof(float))); //Texture coords
-	glEnableVertexAttribArray(2);
-	glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, stride, (void*)(9 * sizeof(float))); //Normals
-	glEnableVertexAttribArray(3);
-
-	CreateTexture(6, nullptr, 8, 8, 8, textures[0]);
-	CreateTexture(1, nullptr, 128, 128, 128, textures[1]);
-	CreateTexture(2, nullptr, 128, 128, 128, textures[2]);
-	CreateTexture(7, nullptr, 128, 128, 128, textures[3]);
-	CreateTexture(8, nullptr, 128, 128, 128, transTextures[0]);
-
-	unsigned int perspectiveLoc = glGetUniformLocation(shader.ID, "perspectiveMat");
-	glUniformMatrix4fv(perspectiveLoc, 1, GL_FALSE, glm::value_ptr(perspective));
-	lightingManager.SetAmbientLoc(std::string("ambient"));
-	lightingManager.SetDirLightLoc(std::string("dirLight.direction"));
-	lightingManager.SetPointIndexLoc(std::string("pointLights"), 0);
-	lightingManager.SetSpotIndexLoc(std::string("spotLights"), 1);
-	lightingManager.GenUBOs(0,1);
-	shader.setInt("texture0", 0);
-
-	lightingManager.pointLights.push_back(PointLight(glm::vec4(1, 2, 0, 1), 1.0f, 0.09f, 0.032f, glm::vec3(0.65f, 0.65f, 0.65f), glm::vec3(0.65f, 0.65f, 0.65f)));
-	lightingManager.spotLights.push_back(SpotLight(glm::vec4(-2, 0, 0, 0), glm::vec4(0, 0, -1, 0), 2, 18, glm::vec3(0.5f, 0.5f, 0.5f), glm::vec3(0.5f, 0.5f, 0.5f)));
-	lightingManager.sceneDirLight.SetColor(glm::vec3(0.6f, 0.6f, 0.6f));
-
-	window.setMouseCursorVisible(false);
-	window.setMouseCursorGrabbed(true);
-
-#pragma region Text Stuff
-	sf::Font lemonMilk;
-	if (!lemonMilk.loadFromFile("Assets\\Fonts\\LemonMilk.otf"))
-	{
-		std::cout << "Could not load LemonMilk font\n";
-		abort();
-	}
-	sf::Text positionXText = sf::Text("X", lemonMilk, 32);
-	sf::Text positionYText = sf::Text("Y", lemonMilk, 32);
-	sf::Text positionZText = sf::Text("Z", lemonMilk, 32);
-	sf::Text positionWText = sf::Text("W", lemonMilk, 32);
-	sf::Text rotationYZText = sf::Text("YZ", lemonMilk, 32);
-	sf::Text rotationZXText = sf::Text("ZX", lemonMilk, 32);
-	sf::Text rotationXWText = sf::Text("XW", lemonMilk, 32);
-	sf::Text rotationZWText = sf::Text("ZW", lemonMilk, 32);
-
-	positionXText.setFillColor(sf::Color(255, 0, 0, 255));
-	positionYText.setFillColor(sf::Color(0, 255, 0, 255));
-	positionZText.setFillColor(sf::Color(0, 0, 255, 255));
-	positionWText.setFillColor(sf::Color(255, 0, 255, 255));
-	rotationYZText.setFillColor(sf::Color(255, 120, 120, 255));
-	rotationZXText.setFillColor(sf::Color(120, 255, 120, 255));
-	rotationXWText.setFillColor(sf::Color(120, 120, 255, 255));
-	rotationZWText.setFillColor(sf::Color(255, 120, 255, 255));
-
-	positionXText.setPosition(5, 5);
-	positionYText.setPosition(5, 55);
-	positionZText.setPosition(5, 105);
-	positionWText.setPosition(5, 155);
-	rotationYZText.setPosition(5, screeny - 187);
-	rotationZXText.setPosition(5, screeny - 137);
-	rotationXWText.setPosition(5, screeny - 87);
-	rotationZWText.setPosition(5, screeny - 37);
-#pragma endregion
+	GUIManager guiManager = GUIManager(screenx, screeny);
+	FileExplorer fileExplorer(&renderManager, &lightingManager, &sceneManager, &guiManager);
+	SetUpUI(guiManager, fileExplorer);
 
 	errorCode = glGetError();
 	if (errorCode != 0)
@@ -238,83 +68,29 @@ int main()
 				glViewport(0, 0, event.size.width, event.size.height);
 			}
 		}
-
-		deltaTime = frameTime.getElapsedTime().asSeconds();
-		debugTime += deltaTime;
-		debugCount++;
-		std::cout << deltaTime << '\n';
-		frameTime.restart();
 		window.setActive(true);
-		ProcessInput(&window);
+		switch (state)
+		{
+		case 0:
+			ProcessGameInput(window, renderManager, lightingManager, sceneManager, fileExplorer);
+			break;
+
+		case 1:
+			fileExplorer.ProcessFileExplorerInput(window);
+			break;
+		}
+		deltaTime = frameTime.getElapsedTime().asSeconds();
+		frameTime.restart();
 		if (!terminated)
 		{
-			window.clear(sf::Color((0.2f * 255), (0.3f * 255), (0.3f * 255), 255));
-			glClear(GL_DEPTH_BUFFER_BIT);
-
-			shader.use();
-			glActiveTexture(GL_TEXTURE0);
-
-			renderManager.ResetIndexes();
-			camera.InvertedCopyToMatrixBuffer();
-			renderManager.ModelGenerate(camera, position);
-			renderManager.DynamicGenerate(camera, position);
-			renderManager.HexaModelGenerate(camera, position);
-			renderManager.CopyToBuffer(VBOs, bufferSizes);
-
-			lightingManager.AmbientToShader();
-			lightingManager.DirLightToShader(camera.GetInvertedTransform());
-			lightingManager.TranferToBuffers(camera.GetInvertedTransform(), position);
-			errorCode = glGetError();
-			for (int i = 0; i < textureCount; i++)
+			if (state == 0)
 			{
-				glBindVertexArray(VAOs[i]);
-				glBindBuffer(GL_ARRAY_BUFFER, VBOs[i]);
-				textures[i].BindTexture(0);
-				glDrawArrays(GL_TRIANGLES, 0, bufferSizes[i]);
+				RenderGame(window, shader, renderManager, lightingManager, bufferSizes, transTextureIDs, transTextureRunLengths, guiManager);
 			}
-			renderManager.TransCopyToBuffer(transTextureIDs, transTextureRunLengths, &transVBO);
-			if (transTextureRunLengths[0] != 0)
+			else if (state == 1)
 			{
-				glBindVertexArray(transVAO);
-				glBindBuffer(GL_ARRAY_BUFFER, transVBO);
-				int index = 0;
-				for (int i = 0; i < transTextureIDs.size(); i++)
-				{
-					transTextures[transTextureIDs[i]].BindTexture(0);
-					glDrawArrays(GL_TRIANGLES, index * 3, transTextureRunLengths[i] * 3);
-					index += transTextureRunLengths[i];
-				}
+				fileExplorer.RenderFileExplorer(window, shader, bufferSizes, transTextureIDs, transTextureRunLengths, guiManager);
 			}
-			glBindBuffer(GL_ARRAY_BUFFER, 0);
-			glBindVertexArray(0);
-			glUseProgram(0);
-			errorCode = glGetError();
-			if (errorCode != 0)
-			{
-				std::cout << errorCode << '\n';
-				abort();
-			}
-
-			window.pushGLStates();
-			positionXText.setString("X: " + std::to_string(position.x));
-			positionYText.setString("Y: " + std::to_string(position.y));
-			positionZText.setString("Z: " + std::to_string(position.z));
-			positionWText.setString("W: " + std::to_string(position.w));
-			rotationYZText.setString("YZ: " + std::to_string(camera.rotation[1]));
-			rotationZXText.setString("ZX: " + std::to_string(camera.rotation[2]));
-			rotationXWText.setString("XW: " + std::to_string(camera.rotation[3]));
-			rotationZWText.setString("ZW: " + std::to_string(camera.rotation[5]));
-			window.draw(positionXText);
-			window.draw(positionYText);
-			window.draw(positionZText);
-			window.draw(positionWText);
-			window.draw(rotationYZText);
-			window.draw(rotationZXText);
-			window.draw(rotationXWText);
-			window.draw(rotationZWText);
-			window.popGLStates();
-
-			window.display();
 		}
 		window.setActive(false);
 	}
@@ -823,10 +599,10 @@ void CreateTexture(int presetNumber, unsigned char* data, unsigned int xDim, uns
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	if (initData)
-		delete data;
+		delete[] data;
 }
 
-void ProcessInput(sf::Window* window)
+void ProcessGameInput(sf::RenderWindow& window, RenderManager& renderManager, LightingManager& lightingManager, SceneManager& sceneManager, FileExplorer& fileExplorer)
 {
 	glm::mat4x4 rotation = camera.GetTransform();
 	//Window input
@@ -836,16 +612,16 @@ void ProcessInput(sf::Window* window)
 		{
 			cursorLock = false;
 			cursorLockWait = 0.5f;
-			window->setMouseCursorVisible(true);
-			window->setMouseCursorGrabbed(false);
+			window.setMouseCursorVisible(true);
+			window.setMouseCursorGrabbed(false);
 		}
-		else if(window->hasFocus())
+		else if(window.hasFocus())
 		{
 			cursorLock = true;
 			firstMouse = true;
 			cursorLockWait = 0.5f;
-			window->setMouseCursorVisible(false);
-			window->setMouseCursorGrabbed(true);
+			window.setMouseCursorVisible(false);
+			window.setMouseCursorGrabbed(true);
 		}
 	}
 	if (cursorLock)
@@ -853,7 +629,7 @@ void ProcessInput(sf::Window* window)
 		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Escape))
 		{
 			terminated = true;
-			window->close();
+			window.close();
 		}
 		//Movement Input
 		if (sf::Keyboard::isKeyPressed(sf::Keyboard::LShift))
@@ -918,22 +694,14 @@ void ProcessInput(sf::Window* window)
 			lightingManager.pointLights[0].position = position + glm::vec4(0, -0.5f, 0, 0);
 			renderManager.hexaRenderables[1].offset = position + glm::vec4(0, -0.5f, 0, 0);
 		}
-		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Y))
+		if (sf::Keyboard::isKeyPressed(sf::Keyboard::P))
 		{
-			sceneManager.SaveScene(renderManager, lightingManager, camera, position, std::string("C:\\Users\\Chris\\Desktop\\Game Design folder o' folders\\C++ Programs\\4DRenderAttempt\\4DRenderAttempt\\Assets\\Scenes\\Scene1.fds"));
-		}
-		if (sf::Keyboard::isKeyPressed(sf::Keyboard::H))
-		{
-			sceneManager.LoadScene(renderManager, lightingManager, camera, position, std::string("C:\\Users\\Chris\\Desktop\\Game Design folder o' folders\\C++ Programs\\4DRenderAttempt\\4DRenderAttempt\\Assets\\Scenes\\Scene1.fds"));
-		}
-		if (sf::Keyboard::isKeyPressed(sf::Keyboard::B))
-		{
-			std::vector<std::string> holdVec;
-			sceneManager.ReadDirectory("C:\\Users\\Chris\\Desktop\\Game Design folder o' folders\\C++ Programs\\4DRenderAttempt\\4DRenderAttempt\\Assets\\Scenes", holdVec);
-			for (int i = 0; i < holdVec.size(); i++)
-			{
-				std::cout << holdVec[i] << '\n';
-			}
+			fileExplorer.EnableUI();
+			mouseRectangle->enabled = true;
+			window.setMouseCursorVisible(false);
+			window.setMouseCursorGrabbed(false);
+			cursorLock = false;
+			state = 1;
 		}
 		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Num3))
 		{
@@ -947,11 +715,11 @@ void ProcessInput(sf::Window* window)
 		//Mouse input
 		if (firstMouse) // this bool variable is initially set to true
 		{
-			sf::Mouse::setPosition(sf::Vector2i((window->getPosition().x + (screenx / 2)), (window->getPosition().y + (screeny / 2))));
+			sf::Mouse::setPosition(sf::Vector2i((window.getPosition().x + (screenx / 2)), (window.getPosition().y + (screeny / 2))));
 			firstMouse = false;
 		}
-		float xOffset = sf::Mouse::getPosition().x - (window->getPosition().x + (screenx / 2));
-		float yOffset = sf::Mouse::getPosition().y - (window->getPosition().y + (screeny / 2));
+		float xOffset = sf::Mouse::getPosition().x - (window.getPosition().x + (screenx / 2));
+		float yOffset = sf::Mouse::getPosition().y - (window.getPosition().y + (screeny / 2));
 
 		float sensitivity = 0.25f;
 		xOffset *= sensitivity;
@@ -966,14 +734,14 @@ void ProcessInput(sf::Window* window)
 			camera.RotateXW(xOffset * deltaTime * rotationSpeed);
 			camera.RotateZW(yOffset * deltaTime * rotationSpeed);
 		}
-		sf::Mouse::setPosition(sf::Vector2i((window->getPosition().x + (screenx / 2)), (window->getPosition().y + (screeny / 2))));
+		sf::Mouse::setPosition(sf::Vector2i((window.getPosition().x + (screenx / 2)), (window.getPosition().y + (screeny / 2))));
 	}
 	else
 	{
 		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Escape) && sf::Keyboard::isKeyPressed(sf::Keyboard::LShift))
 		{
 			terminated = true;
-			window->close();
+			window.close();
 		}
 	}
 	if (cursorLockWait != 0)
@@ -982,6 +750,230 @@ void ProcessInput(sf::Window* window)
 		if (cursorLockWait < 0)
 			cursorLockWait = 0;
 	}
+}
+
+void SetUpRenderManager(RenderManager& renderManager)
+{
+	position = glm::vec4(0, 0, 6, 0.1f);
+	camera.RotateXW(0.0f);
+	glm::mat4x4 derpTest = RotateMat(0, 0, 0, 0, 0, 0);
+	derpTest *= 0.5f;
+	// transformation, offset, modelID, textureID, cellCount, transparent
+	renderManager.tetraRenderables.push_back(Renderable(glm::mat4x4(1)*Rotater(20, 20, 20, 20, 20, 20).GetTransform(), glm::vec4(0, 0, 0, -0.2f), 0, 0, 5, false));
+	renderManager.tetraRenderables.push_back(Renderable(glm::mat4x4(1), glm::vec4(2, 0, 0, 0), 1, 1, 5, false));
+	renderManager.tetraRenderables.push_back(Renderable(glm::mat4x4(3), glm::vec4(-5, 0, 0, -0.5f), 2, 2, 14, false));
+	renderManager.hexaRenderables.push_back(Renderable(derpTest, glm::vec4(0, -2, 0, 0), 0, 3, 8, false));
+	renderManager.hexaRenderables.push_back(Renderable(derpTest / 2.0f, glm::vec4(3, 3, 3, 0), 0, 3, 8, false));
+	for (int x = -2; x < 2; x += 2)
+	{
+		for (int z = -2; z < 2; z += 2)
+		{
+			for (int w = -2; w < 2; w += 2)
+			{
+				renderManager.hexaRenderables.push_back(Renderable(derpTest, glm::vec4(x, -6, z, w), 0, 0, 8, true));
+			}
+		}
+	}
+	for (int x = -1; x < 1; x += 2)
+	{
+		for (int y = -1; y < 1; y += 2)
+		{
+			for (int w = -1; w < 1; w += 2)
+			{
+				renderManager.hexaRenderables.push_back(Renderable(derpTest*1.5f, glm::vec4(x + 3, y, -8, w + 0.5f), 0, 3, 8, false));
+			}
+		}
+	}
+
+	renderManager.Refresh();
+	renderManager.DynRefresh();
+	renderManager.HexaRefresh();
+	renderManager.InitializeDeques(textureCount, transTextureCount);
+}
+void SetUpOpenGL(glm::mat4x4& perspective, sf::RenderWindow& window, Shader& shader)
+{
+	//window.setVerticalSyncEnabled(true);
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	//glEnable(GL_CULL_FACE);
+	glFrontFace(GL_CW);
+
+	shader.use();
+	glGenBuffers(textureCount, VBOs);
+	glGenVertexArrays(textureCount, VAOs);
+
+	unsigned int stride = sizeof(float) * 13;
+
+	for (int i = 0; i < textureCount; i++)
+	{
+		glBindVertexArray(VAOs[i]);
+		glBindBuffer(GL_ARRAY_BUFFER, VBOs[i]);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride, (void*)0); //Position
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, stride, (void*)(3 * sizeof(float))); //Color
+		glEnableVertexAttribArray(1);
+		glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, stride, (void*)(6 * sizeof(float))); //Texture coords
+		glEnableVertexAttribArray(2);
+		glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, stride, (void*)(9 * sizeof(float))); //Normals
+		glEnableVertexAttribArray(3);
+	}
+	glGenBuffers(1, &transVBO);
+	glGenVertexArrays(1, &transVAO);
+
+	glBindVertexArray(transVAO);
+	glBindBuffer(GL_ARRAY_BUFFER, transVBO);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride, (void*)0); //Position
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, stride, (void*)(3 * sizeof(float))); //Color
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, stride, (void*)(6 * sizeof(float))); //Texture coords
+	glEnableVertexAttribArray(2);
+	glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, stride, (void*)(9 * sizeof(float))); //Normals
+	glEnableVertexAttribArray(3);
+
+	CreateTexture(6, nullptr, 8, 8, 8, textures[0]);
+	CreateTexture(1, nullptr, 128, 128, 128, textures[1]);
+	CreateTexture(2, nullptr, 128, 128, 128, textures[2]);
+	CreateTexture(7, nullptr, 128, 128, 128, textures[3]);
+	CreateTexture(8, nullptr, 128, 128, 128, transTextures[0]);
+
+	unsigned int perspectiveLoc = glGetUniformLocation(shader.ID, "perspectiveMat");
+	glUniformMatrix4fv(perspectiveLoc, 1, GL_FALSE, glm::value_ptr(perspective));
+	shader.setInt("texture0", 0);
+
+	window.setMouseCursorVisible(false);
+	window.setMouseCursorGrabbed(true);
+}
+void SetUpLighting(LightingManager& lightingManager)
+{
+	lightingManager.SetAmbientLoc(std::string("ambient"));
+	lightingManager.SetDirLightLoc(std::string("dirLight.direction"));
+	lightingManager.SetPointIndexLoc(std::string("pointLights"), 0);
+	lightingManager.SetSpotIndexLoc(std::string("spotLights"), 1);
+	lightingManager.GenUBOs(0, 1);
+	lightingManager.pointLights.push_back(PointLight(glm::vec4(1, 2, 0, 1), 1.0f, 0.09f, 0.032f, glm::vec3(0.65f, 0.65f, 0.65f), glm::vec3(0.65f, 0.65f, 0.65f)));
+	lightingManager.spotLights.push_back(SpotLight(glm::vec4(-2, 0, 0, 0), glm::vec4(0, 0, -1, 0), 2, 18, glm::vec3(0.5f, 0.5f, 0.5f), glm::vec3(0.5f, 0.5f, 0.5f)));
+	lightingManager.sceneDirLight.SetColor(glm::vec3(0.6f, 0.6f, 0.6f));
+}
+void SetUpUI(GUIManager& guiManager, FileExplorer& fileExplorer)
+{
+	for (int i = 0; i < 9; i++)
+		hudTexts[i] = (Text*)guiManager.AddBack(0, 0);
+	hudTexts[0]->text = sf::Text("X", guiManager.fonts[0], 32);
+	hudTexts[0]->text.setFillColor(sf::Color(255, 0, 0, 255));
+	hudTexts[0]->text.setPosition(5, 5);
+
+	hudTexts[1]->text = sf::Text("Y", guiManager.fonts[0], 32);
+	hudTexts[1]->text.setFillColor(sf::Color(0, 255, 0, 255));
+	hudTexts[1]->text.setPosition(5, 55);
+
+	hudTexts[2]->text = sf::Text("Z", guiManager.fonts[0], 32);
+	hudTexts[2]->text.setFillColor(sf::Color(0, 0, 255, 255));
+	hudTexts[2]->text.setPosition(5, 105);
+
+	hudTexts[3]->text = sf::Text("W", guiManager.fonts[0], 32);
+	hudTexts[3]->text.setFillColor(sf::Color(255, 0, 255, 255));
+	hudTexts[3]->text.setPosition(5, 155);
+
+	hudTexts[4]->text = sf::Text("YZ", guiManager.fonts[0], 32);
+	hudTexts[4]->text.setFillColor(sf::Color(255, 120, 120, 255));
+	hudTexts[4]->text.setPosition(5, screeny - 187);
+
+	hudTexts[5]->text = sf::Text("ZX", guiManager.fonts[0], 32);
+	hudTexts[5]->text.setFillColor(sf::Color(120, 255, 120, 255));
+	hudTexts[5]->text.setPosition(5, screeny - 137);
+
+	hudTexts[6]->text = sf::Text("XW", guiManager.fonts[0], 32);
+	hudTexts[6]->text.setFillColor(sf::Color(120, 120, 255, 255));
+	hudTexts[6]->text.setPosition(5, screeny - 87);
+
+	hudTexts[7]->text = sf::Text("ZW", guiManager.fonts[0], 32);
+	hudTexts[7]->text.setFillColor(sf::Color(255, 120, 255, 255));
+	hudTexts[7]->text.setPosition(5, screeny - 37);
+
+	hudTexts[8]->text = sf::Text("0", guiManager.fonts[0], 26);
+	hudTexts[8]->text.setFillColor(sf::Color(255, 255, 255, 255));
+	hudTexts[8]->text.setPosition((screenx / 2.0f) - 20, screeny - 30);
+
+	fileExplorer.SetupUI();
+
+	mouseRectangle = (RectangleShape*)guiManager.AddBack(1, 100);
+	mouseRectangle->enabled = false;
+	mouseRectangle->SetRectangle(0,0, 6,6, 255,255,255,255, 0,127,0,255, 4);
+	const sf::FloatRect& rectRef = mouseRectangle->rectangle.getLocalBounds();
+	mouseRectangle->rectangle.setOrigin(rectRef.left + (rectRef.width / 2.0f), rectRef.top + (rectRef.height / 2.0f));
+}
+
+void UpdateGameUI()
+{
+	hudTexts[0]->text.setString("X: " + std::to_string(position.x));
+	hudTexts[1]->text.setString("Y: " + std::to_string(position.y));
+	hudTexts[2]->text.setString("Z: " + std::to_string(position.z));
+	hudTexts[3]->text.setString("W: " + std::to_string(position.w));
+	hudTexts[4]->text.setString("YZ: " + std::to_string(camera.rotation[1]));
+	hudTexts[5]->text.setString("ZX: " + std::to_string(camera.rotation[2]));
+	hudTexts[6]->text.setString("XW: " + std::to_string(camera.rotation[3]));
+	hudTexts[7]->text.setString("ZW: " + std::to_string(camera.rotation[5]));
+	hudTexts[8]->text.setString(std::to_string((int)(1.0f/deltaTime)));
+}
+void RenderGame(sf::RenderWindow& window, Shader& shader, RenderManager& renderManager, LightingManager& lightingManager,
+	unsigned int* bufferSizes, std::vector<unsigned int>& transTextureIDs, std::vector<unsigned int>& transTextureRunLengths, GUIManager& guiManager)
+{
+	window.clear(sf::Color((0.2f * 255), (0.3f * 255), (0.3f * 255), 255));
+	glClear(GL_DEPTH_BUFFER_BIT);
+
+	shader.use();
+	glActiveTexture(GL_TEXTURE0);
+
+	renderManager.ResetIndexes();
+	camera.InvertedCopyToMatrixBuffer();
+	renderManager.ModelGenerate(camera, position);
+	renderManager.DynamicGenerate(camera, position);
+	renderManager.HexaModelGenerate(camera, position);
+	renderManager.CopyToBuffer(VBOs, bufferSizes);
+
+	lightingManager.AmbientToShader();
+	lightingManager.DirLightToShader(camera.GetInvertedTransform());
+	lightingManager.TranferToBuffers(camera.GetInvertedTransform(), position);
+	errorCode = glGetError();
+	for (int i = 0; i < textureCount; i++)
+	{
+		glBindVertexArray(VAOs[i]);
+		glBindBuffer(GL_ARRAY_BUFFER, VBOs[i]);
+		textures[i].BindTexture(0);
+		glDrawArrays(GL_TRIANGLES, 0, bufferSizes[i]);
+	}
+	renderManager.TransCopyToBuffer(transTextureIDs, transTextureRunLengths, &transVBO);
+	if (transTextureRunLengths[0] != 0)
+	{
+		glBindVertexArray(transVAO);
+		glBindBuffer(GL_ARRAY_BUFFER, transVBO);
+		int index = 0;
+		for (int i = 0; i < transTextureIDs.size(); i++)
+		{
+			transTextures[transTextureIDs[i]].BindTexture(0);
+			glDrawArrays(GL_TRIANGLES, index * 3, transTextureRunLengths[i] * 3);
+			index += transTextureRunLengths[i];
+		}
+	}
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
+	glUseProgram(0);
+	errorCode = glGetError();
+	if (errorCode != 0)
+	{
+		std::cout << errorCode << '\n';
+		abort();
+	}
+
+	window.pushGLStates();
+	UpdateGameUI();
+	guiManager.Draw(&window);
+	window.popGLStates();
+
+	window.display();
+
 }
 //Sphere approx
 /*
