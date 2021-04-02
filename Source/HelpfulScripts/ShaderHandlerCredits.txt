@@ -1,0 +1,12 @@
+The file ShaderHandler.cpp is licensed under the terms of the CC BY-NC 4.0 license as published by Creative Commons
+
+The file was probably yoinked from https://learnopengl.com/Getting-started/Shaders , but I kinda just copied and pasted the stuff I needed, so it may not match what is actually there.
+
+The license in particular: https://creativecommons.org/licenses/by-nc/4.0/legalcode
+Simplified version: https://creativecommons.org/licenses/by-nc/4.0/
+
+This code was derived from work by Joey de Vries. Twitter: https://twitter.com/JoeyDeVriez
+
+-----------------------------------------------------------
+
+I think I've been meaning to replace this bit for a while now. Until then, beware the restrictions imposed by CC BY-NC 4.0
